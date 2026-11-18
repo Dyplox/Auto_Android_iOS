@@ -25,10 +25,10 @@ class EnvironmentConfigTest {
     @Test
     void environmentFilesOverridePlatformAndCommonFiles() {
         FrameworkConfig config = FrameworkConfig.of(Platform.IOS, "saucelabs",
-                List.of(props("device.name", "iPhone 17 Simulator"),           // env/saucelabs-ios
-                        props("timeout.explicit.seconds", "30"),               // env/saucelabs
+                List.of(props("device.name", "iPhone 17 Simulator"), // env/saucelabs-ios
+                        props("timeout.explicit.seconds", "30"), // env/saucelabs
                         props("device.name", "iPhone 17", "app.id", "org.app"), // ios
-                        props("timeout.explicit.seconds", "20")),              // framework
+                        props("timeout.explicit.seconds", "20")), // framework
                 Map.of(), props());
 
         assertThat(config.environment()).isEqualTo("saucelabs");
@@ -77,22 +77,26 @@ class EnvironmentConfigTest {
             "'  ',         null,      local",
             "null,         null,      local"
     })
-    void environmentIsResolvedFromSystemPropertyThenVariableThenDefault(String system, String variable, String expected) {
+    void environmentIsResolvedFromSystemPropertyThenVariableThenDefault(String system, String variable,
+            String expected) {
         Properties systemProperties = system == null ? props() : props(FrameworkConfig.ENVIRONMENT_PROPERTY, system);
-        Map<String, String> variables = variable == null ? Map.of() : Map.of(FrameworkConfig.ENVIRONMENT_VARIABLE, variable);
+        Map<String, String> variables = variable == null
+                ? Map.of()
+                : Map.of(FrameworkConfig.ENVIRONMENT_VARIABLE, variable);
 
         assertThat(FrameworkConfig.resolveEnvironment(systemProperties, variables)).isEqualTo(expected);
     }
 
     @Test
     void parsesDotEnvFiles() {
-        Map<String, String> variables = FrameworkConfig.parseDotEnv(String.join("\n",
-                "# local credentials",
-                "",
-                "SAUCE_USERNAME=qa-bot",
-                "export SAUCE_ACCESS_KEY = 'abc=123'",
-                "BUILD_NAME=\"Reto SDET\"",
-                "line without equals sign"));
+        Map<String, String> variables = FrameworkConfig.parseDotEnv("""
+                # local credentials
+
+                SAUCE_USERNAME=qa-bot
+                export SAUCE_ACCESS_KEY = 'abc=123'
+                BUILD_NAME="Reto SDET"
+                line without equals sign
+                """);
 
         assertThat(variables)
                 .containsEntry("SAUCE_USERNAME", "qa-bot")

@@ -49,10 +49,12 @@ public final class Gestures {
     public void swipe(Point from, Point to) {
         PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
         Sequence swipe = new Sequence(finger, 0)
-                .addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), from.getX(), from.getY()))
+                .addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), from.getX(),
+                        from.getY()))
                 .addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()))
                 .addAction(new Pause(finger, PRESS_DURATION))
-                .addAction(finger.createPointerMove(SWIPE_DURATION, PointerInput.Origin.viewport(), to.getX(), to.getY()))
+                .addAction(
+                        finger.createPointerMove(SWIPE_DURATION, PointerInput.Origin.viewport(), to.getX(), to.getY()))
                 .addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
         driver.perform(List.of(swipe));
     }

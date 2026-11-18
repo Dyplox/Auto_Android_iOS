@@ -1,5 +1,7 @@
 package com.reto.qa.config;
 
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -15,26 +17,26 @@ public final class DeviceProfile {
 
     private final Platform platform;
     private final String deviceName;
-    private final String platformVersion;
-    private final String udid;
-    private final String app;
+    private final @Nullable String platformVersion;
+    private final @Nullable String udid;
+    private final @Nullable String app;
     private final String appId;
     private final Duration newCommandTimeout;
     private final boolean noReset;
     private final Map<String, Object> extraCapabilities;
 
-    private DeviceProfile(Builder builder) {
+    private DeviceProfile(Builder builder, String deviceName, String appId) {
         this.platform = builder.platform;
-        this.deviceName = builder.deviceName;
+        this.deviceName = deviceName;
         this.platformVersion = builder.platformVersion;
         this.udid = builder.udid;
         this.app = builder.app;
-        this.appId = builder.appId;
+        this.appId = appId;
         this.newCommandTimeout = builder.newCommandTimeout;
         this.noReset = builder.noReset;
         Map<String, Object> capabilities = new LinkedHashMap<>(builder.extraCapabilities);
-        builder.vendorOptions.forEach((vendor, options) ->
-                capabilities.put(vendor, Collections.unmodifiableMap(new LinkedHashMap<>(options))));
+        builder.vendorOptions.forEach((vendor, options) -> capabilities.put(vendor,
+                Collections.unmodifiableMap(new LinkedHashMap<>(options))));
         this.extraCapabilities = Collections.unmodifiableMap(capabilities);
     }
 
@@ -141,14 +143,14 @@ public final class DeviceProfile {
     /** Fluent builder for {@link DeviceProfile}. Blank values are treated as absent. */
     public static final class Builder {
 
-        private static final Duration DEFAULT_NEW_COMMAND_TIMEOUT = Duration.ofSeconds(240);
+        private static final Duration DEFAULT_NEW_COMMAND_TIMEOUT = Duration.ofMinutes(4);
 
         private final Platform platform;
-        private String deviceName;
-        private String platformVersion;
-        private String udid;
-        private String app;
-        private String appId;
+        private @Nullable String deviceName;
+        private @Nullable String platformVersion;
+        private @Nullable String udid;
+        private @Nullable String app;
+        private @Nullable String appId;
         private Duration newCommandTimeout = DEFAULT_NEW_COMMAND_TIMEOUT;
         private boolean noReset;
         private final Map<String, Object> extraCapabilities = new LinkedHashMap<>();
@@ -161,10 +163,10 @@ public final class DeviceProfile {
         /**
          * Sets the device name (required).
          *
-         * @param deviceName emulator, simulator or cloud device name
+         * @param deviceName emulator, simulator or cloud device name; blank or {@code null} clears it
          * @return this builder
          */
-        public Builder deviceName(String deviceName) {
+        public Builder deviceName(@Nullable String deviceName) {
             this.deviceName = blankToNull(deviceName);
             return this;
         }
@@ -172,10 +174,10 @@ public final class DeviceProfile {
         /**
          * Sets the OS version.
          *
-         * @param platformVersion version such as {@code 16} or {@code 26.0}
+         * @param platformVersion version such as {@code 16} or {@code 26.0}; blank or {@code null} clears it
          * @return this builder
          */
-        public Builder platformVersion(String platformVersion) {
+        public Builder platformVersion(@Nullable String platformVersion) {
             this.platformVersion = blankToNull(platformVersion);
             return this;
         }
@@ -183,10 +185,10 @@ public final class DeviceProfile {
         /**
          * Sets the device UDID.
          *
-         * @param udid device or simulator UDID
+         * @param udid device or simulator UDID; blank or {@code null} clears it
          * @return this builder
          */
-        public Builder udid(String udid) {
+        public Builder udid(@Nullable String udid) {
             this.udid = blankToNull(udid);
             return this;
         }
@@ -194,10 +196,10 @@ public final class DeviceProfile {
         /**
          * Sets the app to install.
          *
-         * @param app absolute path, URL or cloud reference
+         * @param app absolute path, URL or cloud reference; blank or {@code null} clears it
          * @return this builder
          */
-        public Builder app(String app) {
+        public Builder app(@Nullable String app) {
             this.app = blankToNull(app);
             return this;
         }
@@ -205,10 +207,10 @@ public final class DeviceProfile {
         /**
          * Sets the app identifier (required).
          *
-         * @param appId {@code appPackage} on Android, {@code bundleId} on iOS
+         * @param appId {@code appPackage} on Android, {@code bundleId} on iOS; blank or {@code null} clears it
          * @return this builder
          */
-        public Builder appId(String appId) {
+        public Builder appId(@Nullable String appId) {
             this.appId = blankToNull(appId);
             return this;
         }
@@ -252,7 +254,8 @@ public final class DeviceProfile {
             int optionSeparator = key.indexOf('.', key.indexOf(':'));
             if (optionSeparator > 0) {
                 String vendor = key.substring(0, optionSeparator);
-                vendorOptions.computeIfAbsent(vendor, k -> new LinkedHashMap<>()).put(key.substring(optionSeparator + 1), value);
+                vendorOptions.computeIfAbsent(vendor, k -> new LinkedHashMap<>())
+                        .put(key.substring(optionSeparator + 1), value);
             } else {
                 extraCapabilities.put(key, value);
             }
@@ -266,10 +269,12 @@ public final class DeviceProfile {
          * @throws ConfigurationException if a required value is missing or the capabilities conflict
          */
         public DeviceProfile build() {
-            if (deviceName == null) {
+            String name = deviceName;
+            if (name == null) {
                 throw new ConfigurationException("device.name is required for " + platform.w3cName());
             }
-            if (appId == null) {
+            String id = appId;
+            if (id == null) {
                 throw new ConfigurationException(
                         "app.id is required (appPackage on Android / bundleId on iOS) for " + platform.w3cName());
             }
@@ -278,12 +283,13 @@ public final class DeviceProfile {
                         + "can pick the simulator. List the available ones with: xcrun simctl list devices available");
             }
             vendorOptions.keySet().stream().filter(extraCapabilities::containsKey).findFirst().ifPresent(vendor -> {
-                throw new ConfigurationException("'" + vendor + "' is defined both as a single value and as an options group");
+                throw new ConfigurationException(
+                        "'" + vendor + "' is defined both as a single value and as an options group");
             });
-            return new DeviceProfile(this);
+            return new DeviceProfile(this, name, id);
         }
 
-        private static String blankToNull(String value) {
+        private static @Nullable String blankToNull(@Nullable String value) {
             return value == null || value.isBlank() ? null : value.trim();
         }
     }

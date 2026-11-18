@@ -13,8 +13,8 @@ import java.util.Objects;
 public final class IosPlatformActions extends AbstractPlatformActions<IOSDriver> {
 
     /** System dialog "Open in &lt;app&gt;?" that the simulator shows when a deep link is opened. */
-    private static final By OPEN_IN_APP_PROMPT =
-            AppiumBy.iOSNsPredicateString("type == 'XCUIElementTypeButton' AND name CONTAINS 'Open'");
+    private static final By OPEN_IN_APP_PROMPT = AppiumBy
+            .iOSNsPredicateString("type == 'XCUIElementTypeButton' AND name CONTAINS 'Open'");
     private static final Duration PROMPT_TIMEOUT = Duration.ofSeconds(2);
 
     private final Waiter waiter;

@@ -1,5 +1,7 @@
 package com.reto.qa.data;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 
 /**
@@ -12,10 +14,10 @@ public final class UserCredentials {
     private final String password;
     private final String passwordConfirmation;
 
-    private UserCredentials(Builder builder) {
-        this.email = builder.email;
-        this.password = builder.password;
-        this.passwordConfirmation = builder.passwordConfirmation != null ? builder.passwordConfirmation : builder.password;
+    private UserCredentials(String email, String password, String passwordConfirmation) {
+        this.email = email;
+        this.password = password;
+        this.passwordConfirmation = passwordConfirmation;
     }
 
     /**
@@ -64,7 +66,7 @@ public final class UserCredentials {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(@Nullable Object other) {
         if (this == other) {
             return true;
         }
@@ -89,9 +91,9 @@ public final class UserCredentials {
     /** Fluent builder for {@link UserCredentials}. */
     public static final class Builder {
 
-        private String email;
-        private String password;
-        private String passwordConfirmation;
+        private @Nullable String email;
+        private @Nullable String password;
+        private @Nullable String passwordConfirmation;
 
         private Builder() {
         }
@@ -136,9 +138,10 @@ public final class UserCredentials {
          * @throws NullPointerException if the email or password is missing
          */
         public UserCredentials build() {
-            Objects.requireNonNull(email, "email is required");
-            Objects.requireNonNull(password, "password is required");
-            return new UserCredentials(this);
+            String requiredEmail = Objects.requireNonNull(email, "email is required");
+            String requiredPassword = Objects.requireNonNull(password, "password is required");
+            String confirmation = passwordConfirmation != null ? passwordConfirmation : requiredPassword;
+            return new UserCredentials(requiredEmail, requiredPassword, confirmation);
         }
     }
 }

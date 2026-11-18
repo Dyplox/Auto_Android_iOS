@@ -35,6 +35,13 @@ jobs:
       # Validates gradle-wrapper.jar and caches dependencies / configuration cache
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew build
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-reports
+          path: |
+            build/reports/tests/test
+            build/reports/jacoco/test
 
   # "ci" environment: Android emulator on the runner, Appium started by the framework.
   android-e2e:

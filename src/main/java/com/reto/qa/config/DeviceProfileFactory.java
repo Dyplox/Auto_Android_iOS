@@ -1,5 +1,6 @@
 package com.reto.qa.config;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,7 @@ public final class DeviceProfileFactory {
      * @throws ConfigurationException if the platform is not available in the environment, or a required property is
      *                                missing or invalid
      */
-    public DeviceProfile create(FrameworkConfig config, String sessionName) {
+    public DeviceProfile create(FrameworkConfig config, @Nullable String sessionName) {
         config.find(UNSUPPORTED_REASON).ifPresent(reason -> {
             throw new ConfigurationException(config.platform().w3cName() + " is not available in the '"
                     + config.environment() + "' environment: " + reason);
@@ -91,7 +92,8 @@ public final class DeviceProfileFactory {
         }
 
         config.withPrefix(CAPABILITY_PREFIX).forEach((name, value) -> builder.capability(name, typed(value)));
-        config.find(CLOUD_OPTIONS_CAPABILITY).ifPresent(options -> addCloudOptions(config, builder, options, sessionName));
+        config.find(CLOUD_OPTIONS_CAPABILITY)
+                .ifPresent(options -> addCloudOptions(config, builder, options, sessionName));
         return builder.build();
     }
 
@@ -100,7 +102,7 @@ public final class DeviceProfileFactory {
      * {@code cloud.option.<key>=<value>} is sent as {@code <cloud.options-capability>.<key>}.
      */
     private static void addCloudOptions(FrameworkConfig config, DeviceProfile.Builder builder, String optionsCapability,
-                                        String sessionName) {
+            @Nullable String sessionName) {
         config.withPrefix(CLOUD_OPTION_PREFIX)
                 .forEach((name, value) -> builder.capability(optionsCapability + "." + name, typed(value)));
         if (sessionName != null) {

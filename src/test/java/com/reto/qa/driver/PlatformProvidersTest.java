@@ -42,7 +42,8 @@ class PlatformProvidersTest {
 
     @Test
     void duplicatedProvidersAreRejected() {
-        assertThatThrownBy(() -> new PlatformProviders(List.of(new AndroidPlatformProvider(), new AndroidPlatformProvider())))
+        assertThatThrownBy(
+                () -> new PlatformProviders(List.of(new AndroidPlatformProvider(), new AndroidPlatformProvider())))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

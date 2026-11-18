@@ -50,8 +50,8 @@ class LoginTest {
     @Severity(SeverityLevel.CRITICAL)
     @DisplayName("Invalid credentials show the validation message")
     void shouldShowValidationErrorForInvalidCredentials(UserCredentials credentials,
-                                                        LoginValidationError expectedError,
-                                                        WdioDemoApp app) {
+            LoginValidationError expectedError,
+            WdioDemoApp app) {
         LoginPage loginPage = app.open(Screen.LOGIN, LoginPage::new);
 
         loginPage.loginWith(credentials);

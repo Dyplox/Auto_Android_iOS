@@ -23,7 +23,7 @@ class DeviceProfileTest {
         assertThat(profile.platformVersion()).isEmpty();
         assertThat(profile.udid()).isEmpty();
         assertThat(profile.app()).contains("/apps/demo.apk");
-        assertThat(profile.newCommandTimeout()).isEqualTo(Duration.ofSeconds(240));
+        assertThat(profile.newCommandTimeout()).isEqualTo(Duration.ofMinutes(4));
         assertThat(profile.extraCapabilities())
                 .containsEntry("appium:appWaitActivity", "com.wdiodemoapp.MainActivity")
                 .containsEntry("myvendor:flag", true);
@@ -52,7 +52,8 @@ class DeviceProfileTest {
                 .capability("sauce:options", "x")
                 .capability("sauce:options.name", "y");
 
-        assertThatThrownBy(builder::build).isInstanceOf(ConfigurationException.class).hasMessageContaining("sauce:options");
+        assertThatThrownBy(builder::build).isInstanceOf(ConfigurationException.class)
+                .hasMessageContaining("sauce:options");
     }
 
     @Test

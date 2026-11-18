@@ -1,7 +1,7 @@
 
 # Cross-platform mobile automation with Appium (Android + iOS)
 
-A single test project for **the same app on Android and iOS**, built with **Gradle 9** and **JUnit 5**.
+A single test project for **the same app on Android and iOS**, built with **Gradle 9**, **JUnit 6** and **Java 27**.
 Page Objects, tests and test data are shared; **the only thing that changes per platform is the locators**,
 declared with Page Factory (`@AndroidFindBy` / `@iOSXCUITFindBy`) and resolved at runtime from the session.
 
@@ -50,12 +50,16 @@ validation, forms, native alerts, swipe, drag & drop, deep links (`wdio://`) and
 |---|---|---|
 | Gradle | 9.9.1 (wrapper, with checksum) | Kotlin DSL, version catalog, configuration cache (runs Android and iOS in parallel); supports Java 27 since 9.8 |
 | Java | 27 (toolchain) | Compilation, tests and Javadoc run on JDK 27; Gradle downloads it if it is missing (Foojay) |
-| JUnit | 5.14.4 (Jupiter) | Extensions, parameter injection, `@ParameterizedTest`, `@Tag`, `@TempDir`, parallel execution |
+| JUnit | 6.1.3 (Jupiter) | Extensions, parameter injection, `@ParameterizedTest`, `@Tag`, `@TempDir`, parallel execution, auto-closed `Store` values |
 | Appium java-client | 11.0.0 | Cross-platform Page Factory, typed options (Builder), W3C Actions |
 | Selenium API | 4.50.0 | Pinned per java-client 11's official compatibility matrix |
 | AssertJ | 3.27.7 | Fluent assertions and clear messages (Self-validating) |
 | Allure | 3.1.1 (`allure-jupiter`) / 3.33.0 (CLI) | Report with steps (`@Step`), screenshots and page source on failure |
 | AspectJ weaver | 1.9.27 | `-javaagent` for Allure `@Step`; first release that supports Java 27 |
+| Error Prone + NullAway | 2.52.0 + 0.14.3 | Bug patterns and null safety at compile time (JSpecify `@Nullable`) |
+| Spotless | 8.10.4 (Eclipse JDT formatter) | One code format for everyone; `spotlessCheck` runs in `build`. Works on JDK 27 (palantir/google-java-format do not yet) |
+| JaCoCo | 0.8.16 | Coverage of the framework unit tests (first release that supports Java 27) |
+| Gradle Test Retry | 1.6.6 | Re-runs a failed E2E test once and reports it as flaky |
 | Appium server | 4.0.0 | Latest release (Nov 15, 2026), pinned in `package.json` / `package-lock.json` |
 | UiAutomator2 / XCUITest | 9.2.2 / 13.1.3 | First driver lines for Appium 4 |
 
@@ -69,9 +73,10 @@ Library versions live in a single place: [`gradle/libs.versions.toml`](gradle/li
 build.gradle.kts                 tasks: test (unit) · e2eAndroid · e2eIos · e2e (both in parallel)
 gradle/libs.versions.toml        version catalog
 src/main/java/com/reto/qa
-├── config/        FrameworkConfig (properties + env + -P), DeviceProfile (Builder), IosSimulatorLocator
+├── config/        FrameworkConfig (properties + env + -P) · FrameworkSettings (typed, validated)
+│                  DeviceProfile (Builder) · IosSimulatorLocator
 ├── driver/        PlatformProvider (Abstract Factory) · Android/IosPlatformProvider · MobileSessionFactory
-│                  MobileSession · AppiumServerManager
+│                  MobileSession · AppiumServer (Local | Remote)
 ├── core/          Waiter (explicit waits) · Gestures (W3C Actions) · PlatformActions (Strategy)
 ├── navigation/    Navigator (Strategy): TabBarNavigator | DeepLinkNavigator
 ├── pages/         BaseUiObject (Page Factory) · BasePage · LoginPage · FormsPage · HomePage
@@ -97,7 +102,9 @@ Lifecycle of a test class:
 
 ```
 @MobileTest ─► AppiumSessionExtension.beforeAll
-                 └─ MobileSessionFactory ─► DeviceProfileFactory (config ► DeviceProfile)
+                 ├─ AppiumServer: one per JVM, in the root Store (JUnit closes it at the end of the run)
+                 └─ MobileSessionFactory ─► FrameworkSettings.from(config) (fails fast on bad values)
+                                            DeviceProfileFactory (config ► DeviceProfile)
                                             PlatformProviders.forPlatform(ANDROID|IOS)
                                               ├─ capabilities()   UiAutomator2Options | XCUITestOptions
                                               ├─ createDriver()   AndroidDriver | IOSDriver
@@ -120,7 +127,7 @@ Lifecycle of a test class:
 | **O** – Open/closed | A new platform or cloud provider = a new `PlatformProvider` registered in `PlatformProviders`; a new way to navigate = a new `Navigator`; a new cross-cutting behaviour = a new JUnit extension. No existing class changes |
 | **L** – Liskov substitution | `AndroidPlatformActions` and `IosPlatformActions` are interchangeable; the generic bound `D extends AppiumDriver & InteractsWithApps & HasOnScreenKeyboard` guarantees it at compile time |
 | **I** – Interface segregation | Small interfaces: `Navigator` (1 method), `PlatformActions` (3), `PlatformProvider` (4) |
-| **D** – Dependency inversion | Tests receive `WdioDemoApp` as a parameter and pages receive `MobileSession` through the constructor; they depend on abstractions (`PlatformActions`, `Navigator`). There are no singletons, `ThreadLocal`s or test base classes |
+| **D** – Dependency inversion | Tests receive `WdioDemoApp` as a parameter and pages receive `MobileSession` through the constructor; they depend on abstractions (`PlatformActions`, `Navigator`). There are no singletons, static state, `ThreadLocal`s or test base classes: even the Appium server is an object (`AppiumServer`) owned by the JUnit extension |
 
 ### FIRST
 
@@ -129,14 +136,14 @@ Lifecycle of a test class:
 | **Fast** | One session per class (not per test); the app is restarted with `terminateApp/activateApp` instead of a new session; condition-based waits, never `Thread.sleep`; unit tests in parallel; Android and iOS in parallel (`./gradlew e2e`); optional deep-link navigation |
 | **Independent** | `beforeEach` restarts the app: every test starts on Home without depending on another one; the session lives in the class's `Store` (isolated per class); each platform runs in its own JVM; `@TempDir` in unit tests |
 | **Repeatable** | Deterministic data (`CredentialsMother`); versions pinned in the version catalog, the wrapper (with checksum), `package-lock.json` (Appium and drivers) and the app; the same suite in any environment, only the configuration changes |
-| **Self-validating** | AssertJ with descriptive messages; automatic evidence (screenshot + page source) in Allure on failure |
-| **Timely** | The framework unit tests run on every `./gradlew build` and on every PR (CI) |
+| **Self-validating** | AssertJ with descriptive messages; automatic evidence (screenshot + page source) in Allure on failure; a test that only passes on retry is reported as *flaky*, not as passed |
+| **Timely** | The framework unit tests, Error Prone, NullAway and Spotless run on every `./gradlew build` and on every PR (CI) |
 
 ### Other patterns
 
 - **Builder**: `DeviceProfile.builder(...)`, `UserCredentials.builder()/toBuilder()` and Appium's typed options (`UiAutomator2Options`, `XCUITestOptions`).
 - **Page Factory**: `PageFactory.initElements(new AppiumFieldDecorator(driver, Duration.ZERO), this)` in `BaseUiObject`; *lazy* elements (looked up on every use, no `StaleElementReference`).
-- **Abstract Factory** (`PlatformProvider`), **Strategy** (`PlatformActions`, `Navigator`), **Facade** (`WdioDemoApp`), **Object Mother** (`CredentialsMother`), **JUnit 5 extensions** instead of inheritance (`@MobileTest`).
+- **Abstract Factory** (`PlatformProvider`), **Strategy** (`PlatformActions`, `Navigator`), **Facade** (`WdioDemoApp`), **Object Mother** (`CredentialsMother`), **JUnit extensions** instead of inheritance (`@MobileTest`).
 
 ### Where can platform-specific code live?
 
@@ -166,7 +173,7 @@ npm ci                        # Appium 4.0.0 + UiAutomator2 + XCUITest + Allure 
 npm run doctor:android        # checks the Android setup (SDK, adb, JAVA_HOME…)
 npm run doctor:ios            # checks Xcode, simulators…
 
-./gradlew build               # compiles and runs the framework unit tests (no device) ✔
+./gradlew build               # compiles, runs static analysis, formatting check and the unit tests (no device) ✔
 ```
 
 ### Running E2E tests
@@ -260,6 +267,43 @@ the framework's `-P` properties to the test JVM (the first one found wins):
 - **Extra capabilities** without code changes: `capability.<name>=<value>` (sent as `appium:<name>`), for example `capability.avd=Pixel_9_API_36` so Appium boots the emulator.
 - **iOS without a configured simulator**: if `device.udid` and `platform.version` are empty, the framework picks one with `xcrun simctl` (a booted one first; otherwise `device.name` on the newest runtime).
 - **Navigation**: `navigation.strategy=tabbar` (through the UI, default) or `deeplink` (faster).
+- **Typed settings**: `FrameworkSettings` turns the Appium server, timeout and navigation keys into typed records
+  (`ServerSettings`, `TimeoutSettings`, `NavigationSettings`) and validates them before any session opens: an unknown
+  `navigation.strategy`, a zero timeout or a polling interval longer than the timeout fails immediately with the key
+  name in the message.
+
+## Flaky tests (retries)
+
+E2E tasks re-run a failed test once (Gradle Test Retry plugin). A test that passes on the second attempt does not
+break the build, but it shows up as *flaky* in the Gradle report and as a retried test in Allure, so it is never
+hidden. If more than 5 tests fail in a run, nothing is re-run: that is a real problem, not flakiness.
+
+```bash
+./gradlew e2eAndroid -Pretries=2    # up to 2 re-runs per failed test
+./gradlew e2eIos -Pretries=0        # no retries (for example while debugging a locator)
+```
+
+Unit tests are never retried: they must be deterministic.
+
+## Code quality
+
+| Command | What it does |
+|---|---|
+| `./gradlew spotlessApply` | Formats the code (Eclipse JDT, 4 spaces, 120 columns; settings in `gradle/eclipse-java-formatter.prefs`) |
+| `./gradlew spotlessCheck` | Fails if any file is not formatted (part of `check` / `build`) |
+| `./gradlew compileJava` | Error Prone + NullAway run inside the compiler: a bug pattern or a possible `NullPointerException` breaks the build |
+| `./gradlew test` | Unit tests + JaCoCo report in `build/reports/jacoco/test/html/index.html` |
+
+**Null safety**: code in `com.reto.qa` is non-null by default. A value that can be null must be marked with
+`org.jspecify.annotations.Nullable`; NullAway checks every use of it at compile time. Page Factory fields
+(`@AndroidFindBy` / `@iOSXCUITFindBy`) are excluded because they are injected by reflection.
+
+## Dependency updates
+
+`.github/dependabot.yml` opens weekly pull requests for Gradle (version catalog, plugins, wrapper), npm (Appium and its
+drivers) and GitHub Actions. Related libraries are grouped so they move together, for example java-client with
+Selenium (they must stay on the official compatibility matrix) and JUnit's modules. The `unit` CI job validates every
+pull request before it is merged.
 
 ## Report
 
@@ -284,7 +328,8 @@ To inspect locators, use [Appium Inspector](https://github.com/appium/appium-ins
 
 `.github/workflows/mobile-tests.yml` (with `gradle/actions/setup-gradle`, which also validates `gradle-wrapper.jar`):
 
-- **unit** (ubuntu): `./gradlew build` on every push/PR.
+- **unit** (ubuntu): `./gradlew build` on every push/PR (static analysis, formatting, unit tests and coverage; the
+  reports are uploaded as artifacts).
 - **android-e2e** (ubuntu + KVM emulator) and **ios-e2e** (macOS + simulator): `npm ci`, app download and
   `./gradlew e2eAndroid|e2eIos -Penv=ci`. They publish Allure results, screenshots, the Gradle report and the Appium
   log as artifacts.

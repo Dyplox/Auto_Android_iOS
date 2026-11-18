@@ -41,7 +41,8 @@ public final class EvidenceExtension implements TestExecutionExceptionHandler {
 
     private static void captureEvidence(MobileSession session, ExtensionContext context) {
         // The uniqueId hash tells apart the invocations of a @ParameterizedTest.
-        String testName = context.getRequiredTestClass().getSimpleName() + "." + context.getRequiredTestMethod().getName()
+        String testName = context.getRequiredTestClass().getSimpleName() + "."
+                + context.getRequiredTestMethod().getName()
                 + "-" + Integer.toHexString(context.getUniqueId().hashCode());
         try {
             byte[] screenshot = session.driver().getScreenshotAs(OutputType.BYTES);

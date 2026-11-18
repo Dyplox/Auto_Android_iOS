@@ -2,7 +2,9 @@ package com.reto.qa.junit;
 
 import com.reto.qa.app.WdioDemoApp;
 import com.reto.qa.config.FrameworkConfig;
+import com.reto.qa.config.FrameworkSettings;
 import com.reto.qa.config.Platform;
+import com.reto.qa.driver.AppiumServer;
 import com.reto.qa.driver.MobileSession;
 import com.reto.qa.driver.MobileSessionFactory;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -19,6 +21,9 @@ import java.util.Optional;
  * Appium session lifecycle built on the JUnit 5 extension model.
  *
  * <ul>
+ *     <li><b>One Appium server per test JVM</b> ({@link AppiumServer}), stored in the root
+ *     {@link ExtensionContext.Store} and shared by every class. JUnit closes {@link AutoCloseable} values when their
+ *     store is discarded, so a server started by this JVM is stopped at the end of the run, with no shutdown hook.</li>
  *     <li><b>One session per class</b>, stored in the class's {@link ExtensionContext.Store}: there is no
  *     {@code ThreadLocal} or static state, so it is safe even when JUnit spreads work across threads.</li>
  *     <li><b>App restarted before each test</b>: every test starts from the same state and does not depend on another
@@ -30,11 +35,17 @@ import java.util.Optional;
  *     iOS and for any environment (local, CI or cloud).</li>
  * </ul>
  */
-public final class AppiumSessionExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback,
-        ParameterResolver {
+public final class AppiumSessionExtension
+        implements
+            BeforeAllCallback,
+            AfterAllCallback,
+            BeforeEachCallback,
+            ParameterResolver {
 
-    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(AppiumSessionExtension.class);
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
+            .create(AppiumSessionExtension.class);
     private static final String SESSION_KEY = "mobile-session";
+    private static final String SERVER_KEY = "appium-server";
     private static final String DEFAULT_PLATFORM = "android";
 
     private final MobileSessionFactory sessionFactory = new MobileSessionFactory();
@@ -44,11 +55,17 @@ public final class AppiumSessionExtension implements BeforeAllCallback, AfterAll
         // Stateless apart from the session factory.
     }
 
-    /** Opens the class's session, named after the test class on cloud dashboards. */
+    /**
+     * Gets (or starts) the JVM's Appium server and opens the class's session, named after the test class on cloud
+     * dashboards.
+     */
     @Override
     public void beforeAll(ExtensionContext context) {
         Platform platform = Platform.from(context.getConfigurationParameter("platform").orElse(DEFAULT_PLATFORM));
-        MobileSession session = sessionFactory.start(FrameworkConfig.forPlatform(platform), context.getDisplayName());
+        FrameworkConfig config = FrameworkConfig.forPlatform(platform);
+        AppiumServer server = context.getRoot().getStore(NAMESPACE).computeIfAbsent(SERVER_KEY,
+                key -> AppiumServer.from(FrameworkSettings.from(config).server(), platform), AppiumServer.class);
+        MobileSession session = sessionFactory.start(config, server.url(), context.getDisplayName());
         context.getStore(NAMESPACE).put(SESSION_KEY, session);
     }
 

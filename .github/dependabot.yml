@@ -1,0 +1,42 @@
+# Weekly dependency updates as pull requests. CI (unit job) validates each one before it is merged.
+version: 2
+updates:
+  # Gradle: version catalog (gradle/libs.versions.toml), plugins and the wrapper
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # java-client and Selenium must move together (official compatibility matrix)
+      appium-selenium:
+        patterns: ["io.appium:*", "org.seleniumhq.selenium:*"]
+      junit:
+        patterns: ["org.junit*"]
+      allure-aspectj:
+        patterns: ["io.qameta.allure*", "org.aspectj:*"]
+      code-quality:
+        patterns:
+          - "com.google.errorprone*"
+          - "com.uber.nullaway*"
+          - "com.diffplug.spotless*"
+          - "net.ltgt.errorprone*"
+          - "org.jacoco*"
+
+  # npm: Appium server, drivers and the Allure CLI (package.json / package-lock.json)
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      appium:
+        patterns: ["appium", "appium-*"]
+
+  # GitHub Actions used by the workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -52,7 +52,7 @@ class DeviceProfileFactoryTest {
                 "capability.systemPort", "8201"));
 
         assertThat(profile.app()).contains(projectDir.resolve("apps/demo.apk").toAbsolutePath().toString());
-        assertThat(profile.newCommandTimeout().getSeconds()).isEqualTo(120);
+        assertThat(profile.newCommandTimeout().toSeconds()).isEqualTo(120);
         assertThat(profile.extraCapabilities())
                 .containsEntry("appium:appWaitActivity", "com.wdiodemoapp.MainActivity")
                 .containsEntry("appium:disableWindowAnimation", true)
@@ -78,7 +78,8 @@ class DeviceProfileFactoryTest {
         assertThat(factory.resolveApp("storage:filename=app.apk")).isEqualTo("storage:filename=app.apk");
         assertThat(factory.resolveApp("bs://f7c874f21852ba57957a3fdc33f47514288c4ba4"))
                 .isEqualTo("bs://f7c874f21852ba57957a3fdc33f47514288c4ba4");
-        assertThat(factory.resolveApp("WdioDemoApp-Android")).as("BrowserStack custom_id").isEqualTo("WdioDemoApp-Android");
+        assertThat(factory.resolveApp("WdioDemoApp-Android")).as("BrowserStack custom_id")
+                .isEqualTo("WdioDemoApp-Android");
     }
 
     @Test

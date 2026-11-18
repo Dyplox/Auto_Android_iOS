@@ -15,7 +15,8 @@ import java.util.Objects;
  * @param <D> the platform-specific driver type
  */
 abstract class AbstractPlatformActions<D extends AppiumDriver & InteractsWithApps & HasOnScreenKeyboard>
-        implements PlatformActions {
+        implements
+            PlatformActions {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPlatformActions.class);
 

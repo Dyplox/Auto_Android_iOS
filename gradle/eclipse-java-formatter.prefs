@@ -1,0 +1,24 @@
+# Java format applied by Spotless (./gradlew spotlessApply) with the Eclipse JDT formatter.
+# Eclipse JDT is used instead of google/palantir-java-format because it does not depend on javac internals,
+# which changed in JDK 27 (palantir-java-format fails there with NoSuchFieldError: JCCompilationUnit.endPositions).
+# Only the differences from Eclipse's built-in profile are listed here.
+org.eclipse.jdt.core.compiler.source=21
+org.eclipse.jdt.core.compiler.compliance=21
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=21
+# 4 spaces, 120 columns, continuation lines indented 8 spaces
+org.eclipse.jdt.core.formatter.tabulation.char=space
+org.eclipse.jdt.core.formatter.tabulation.size=4
+org.eclipse.jdt.core.formatter.indentation.size=4
+org.eclipse.jdt.core.formatter.lineSplit=120
+org.eclipse.jdt.core.formatter.continuation_indentation=2
+org.eclipse.jdt.core.formatter.continuation_indentation_for_array_initializer=2
+# case labels indented inside switch
+org.eclipse.jdt.core.formatter.indent_switchstatements_compare_to_switch=true
+# keep line breaks chosen by the author (fluent chains, long argument lists)
+org.eclipse.jdt.core.formatter.join_wrapped_lines=false
+org.eclipse.jdt.core.formatter.number_of_empty_lines_to_preserve=1
+# leave Javadoc and comments exactly as written
+org.eclipse.jdt.core.formatter.comment.format_javadoc_comments=false
+org.eclipse.jdt.core.formatter.comment.format_block_comments=false
+org.eclipse.jdt.core.formatter.comment.format_line_comments=false
+org.eclipse.jdt.core.formatter.comment.line_length=120

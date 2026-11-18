@@ -22,9 +22,10 @@ import java.util.regex.Pattern;
  */
 public final class IosSimulatorLocator {
 
+    private static final Pattern VERSION_SEPARATOR = Pattern.compile("\\.");
     private static final Pattern RUNTIME_HEADER = Pattern.compile("^-- iOS ([0-9.]+) --$");
-    private static final Pattern DEVICE_LINE =
-            Pattern.compile("^\\s+(.+) \\(([0-9A-Fa-f-]{36})\\) \\(([A-Za-z ]+)\\)\\s*$");
+    private static final Pattern DEVICE_LINE = Pattern
+            .compile("^\\s+(.+) \\(([0-9A-Fa-f-]{36})\\) \\(([A-Za-z ]+)\\)\\s*$");
 
     private final Supplier<Optional<String>> simctlOutput;
 
@@ -61,7 +62,7 @@ public final class IosSimulatorLocator {
     static List<Simulator> parse(String simctlOutput) {
         List<Simulator> simulators = new ArrayList<>();
         String runtime = null;
-        for (String line : simctlOutput.split("\\R")) {
+        for (String line : simctlOutput.lines().toList()) {
             if (line.startsWith("--")) {
                 Matcher header = RUNTIME_HEADER.matcher(line.trim());
                 runtime = header.matches() ? header.group(1) : null;
@@ -84,7 +85,8 @@ public final class IosSimulatorLocator {
      * @return the chosen simulator, or empty when there are no candidates
      */
     static Optional<Simulator> choose(List<Simulator> simulators, String preferredName) {
-        Comparator<Simulator> newestRuntimeFirst = Comparator.comparing(Simulator::runtime, IosSimulatorLocator::compareVersions).reversed();
+        Comparator<Simulator> newestRuntimeFirst = Comparator
+                .comparing(Simulator::runtime, IosSimulatorLocator::compareVersions).reversed();
         Optional<Simulator> booted = simulators.stream().filter(Simulator::booted).findFirst();
         if (booted.isPresent()) {
             return booted;
@@ -103,10 +105,10 @@ public final class IosSimulatorLocator {
      * @return a negative number, zero or a positive number, as in {@link Comparator#compare}
      */
     static int compareVersions(String left, String right) {
-        String[] l = left.split("\\.");
-        String[] r = right.split("\\.");
+        int[] l = VERSION_SEPARATOR.splitAsStream(left).mapToInt(Integer::parseInt).toArray();
+        int[] r = VERSION_SEPARATOR.splitAsStream(right).mapToInt(Integer::parseInt).toArray();
         for (int i = 0; i < Math.max(l.length, r.length); i++) {
-            int diff = Integer.compare(i < l.length ? Integer.parseInt(l[i]) : 0, i < r.length ? Integer.parseInt(r[i]) : 0);
+            int diff = Integer.compare(i < l.length ? l[i] : 0, i < r.length ? r[i] : 0);
             if (diff != 0) {
                 return diff;
             }

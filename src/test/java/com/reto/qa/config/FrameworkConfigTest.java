@@ -21,7 +21,7 @@ class FrameworkConfigTest {
     }
 
     private static FrameworkConfig config(Platform platform, Properties common, Properties file,
-                                          Map<String, String> env, Properties system) {
+            Map<String, String> env, Properties system) {
         return FrameworkConfig.of(platform, common, file, env, system);
     }
 

@@ -1,5 +1,7 @@
 package com.reto.qa.config;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -69,10 +71,10 @@ public final class FrameworkConfig {
     private final Properties systemProperties;
 
     private FrameworkConfig(Platform platform,
-                            String environment,
-                            List<Properties> fileLayers,
-                            Map<String, String> environmentVariables,
-                            Properties systemProperties) {
+            String environment,
+            List<Properties> fileLayers,
+            Map<String, String> environmentVariables,
+            Properties systemProperties) {
         this.platform = Objects.requireNonNull(platform, "platform");
         this.environment = Objects.requireNonNull(environment, "environment");
         this.fileLayers = fileLayers.stream().map(FrameworkConfig::copyOf).toList();
@@ -90,7 +92,8 @@ public final class FrameworkConfig {
      */
     public static FrameworkConfig forPlatform(Platform platform) {
         return CACHE.computeIfAbsent(platform, p -> {
-            Map<String, String> variables = new HashMap<>(loadDotEnv(Paths.get(System.getProperty("user.dir"), ".env")));
+            Map<String, String> variables = new HashMap<>(
+                    loadDotEnv(Paths.get(System.getProperty("user.dir"), ".env")));
             variables.putAll(System.getenv());
             Properties system = System.getProperties();
             String environment = resolveEnvironment(system, variables);
@@ -109,9 +112,10 @@ public final class FrameworkConfig {
     static List<Properties> loadLayers(Platform platform, String environment) {
         List<Properties> layers = new ArrayList<>();
         loadOptional("config/env/" + environment + "-" + platform.key() + ".properties").ifPresent(layers::add);
-        layers.add(loadOptional("config/env/" + environment + ".properties").orElseThrow(() -> new ConfigurationException(
-                "Unknown environment '" + environment + "': src/test/resources/config/env/" + environment
-                        + ".properties is missing. Bundled environments: local, ci, browserstack, saucelabs")));
+        layers.add(
+                loadOptional("config/env/" + environment + ".properties").orElseThrow(() -> new ConfigurationException(
+                        "Unknown environment '" + environment + "': src/test/resources/config/env/" + environment
+                                + ".properties is missing. Bundled environments: local, ci, browserstack, saucelabs")));
         layers.add(loadRequired("config/" + platform.key() + ".properties"));
         layers.add(loadRequired(COMMON_FILE));
         return layers;
@@ -128,10 +132,10 @@ public final class FrameworkConfig {
      * @return the configuration
      */
     static FrameworkConfig of(Platform platform,
-                              String environment,
-                              List<Properties> fileLayers,
-                              Map<String, String> environmentVariables,
-                              Properties systemProperties) {
+            String environment,
+            List<Properties> fileLayers,
+            Map<String, String> environmentVariables,
+            Properties systemProperties) {
         return new FrameworkConfig(platform, environment, fileLayers, environmentVariables, systemProperties);
     }
 
@@ -146,11 +150,12 @@ public final class FrameworkConfig {
      * @return the configuration
      */
     static FrameworkConfig of(Platform platform,
-                              Properties common,
-                              Properties platformSpecific,
-                              Map<String, String> environmentVariables,
-                              Properties systemProperties) {
-        return of(platform, DEFAULT_ENVIRONMENT, List.of(platformSpecific, common), environmentVariables, systemProperties);
+            Properties common,
+            Properties platformSpecific,
+            Map<String, String> environmentVariables,
+            Properties systemProperties) {
+        return of(platform, DEFAULT_ENVIRONMENT, List.of(platformSpecific, common), environmentVariables,
+                systemProperties);
     }
 
     /**
@@ -203,7 +208,8 @@ public final class FrameworkConfig {
     public String get(String key) {
         return find(key).orElseThrow(() -> new ConfigurationException(
                 "Missing required property '" + key + "' for " + platform.w3cName() + " in the '"
-                        + environment + "' environment. Define it in config/" + platform.key() + ".properties, in config/env/"
+                        + environment + "' environment. Define it in config/" + platform.key()
+                        + ".properties, in config/env/"
                         + environment + ".properties or with -P" + key + "=..."));
     }
 
@@ -305,7 +311,8 @@ public final class FrameworkConfig {
      * @return the lower-case environment name
      */
     static String resolveEnvironment(Properties systemProperties, Map<String, String> environmentVariables) {
-        return Stream.of(systemProperties.getProperty(ENVIRONMENT_PROPERTY), environmentVariables.get(ENVIRONMENT_VARIABLE))
+        return Stream
+                .of(systemProperties.getProperty(ENVIRONMENT_PROPERTY), environmentVariables.get(ENVIRONMENT_VARIABLE))
                 .filter(FrameworkConfig::hasText)
                 .map(value -> value.trim().toLowerCase(Locale.ROOT))
                 .findFirst()
@@ -318,10 +325,10 @@ public final class FrameworkConfig {
         StringBuilder result = new StringBuilder();
         while (matcher.find()) {
             String name = matcher.group(1);
-            String fromSystem = systemProperties.getProperty(name);
-            String fromEnvironment = environmentVariables.get(name);
-            String fallback = matcher.group(2);
-            String resolved = hasText(fromSystem) ? fromSystem : hasText(fromEnvironment) ? fromEnvironment : fallback;
+            @Nullable String fromSystem = systemProperties.getProperty(name);
+            @Nullable String fromEnvironment = environmentVariables.get(name);
+            @Nullable String fallback = matcher.group(2);
+            @Nullable String resolved = hasText(fromSystem) ? fromSystem : hasText(fromEnvironment) ? fromEnvironment : fallback;
             if (resolved == null) {
                 throw new ConfigurationException("'" + key + "' needs the variable " + name + " ('"
                         + environment + "' environment). Define it as an environment variable or in the .env file");
@@ -351,7 +358,7 @@ public final class FrameworkConfig {
      */
     static Map<String, String> parseDotEnv(String content) {
         Map<String, String> variables = new LinkedHashMap<>();
-        for (String rawLine : content.split("\\R")) {
+        for (String rawLine : content.lines().toList()) {
             String line = rawLine.strip();
             if (line.isEmpty() || line.startsWith("#") || !line.contains("=")) {
                 continue;
@@ -363,7 +370,8 @@ public final class FrameworkConfig {
             String name = line.substring(0, separator).strip();
             String value = line.substring(separator + 1).strip();
             boolean quoted = value.length() >= 2
-                    && (value.startsWith("\"") && value.endsWith("\"") || value.startsWith("'") && value.endsWith("'"));
+                    && ((value.startsWith("\"") && value.endsWith("\""))
+                            || (value.startsWith("'") && value.endsWith("'")));
             variables.put(name, quoted ? value.substring(1, value.length() - 1) : value);
         }
         return variables;
@@ -386,7 +394,7 @@ public final class FrameworkConfig {
         }
     }
 
-    private static boolean hasText(String value) {
+    private static boolean hasText(@Nullable String value) {
         return value != null && !value.isBlank();
     }
 

@@ -1,7 +1,7 @@
 package com.reto.qa.driver;
 
 import com.reto.qa.config.DeviceProfile;
-import com.reto.qa.config.FrameworkConfig;
+import com.reto.qa.config.FrameworkSettings;
 import com.reto.qa.config.Platform;
 import com.reto.qa.core.Gestures;
 import com.reto.qa.core.PlatformActions;
@@ -16,24 +16,24 @@ import java.util.Objects;
  *
  * @param driver   the Appium driver
  * @param profile  the device and app under test
- * @param config   the configuration the session was created from
+ * @param settings the typed framework settings the session was created with
  * @param waiter   explicit waits bound to this driver
  * @param gestures W3C gestures bound to this driver
  * @param actions  platform-specific actions (Strategy)
  */
 public record MobileSession(AppiumDriver driver,
-                            DeviceProfile profile,
-                            FrameworkConfig config,
-                            Waiter waiter,
-                            Gestures gestures,
-                            PlatformActions actions) implements AutoCloseable {
+        DeviceProfile profile,
+        FrameworkSettings settings,
+        Waiter waiter,
+        Gestures gestures,
+        PlatformActions actions) implements AutoCloseable {
 
     /**
      * Validates that no component is missing.
      *
      * @param driver   the Appium driver
      * @param profile  the device and app under test
-     * @param config   the configuration the session was created from
+     * @param settings the typed framework settings the session was created with
      * @param waiter   explicit waits bound to this driver
      * @param gestures W3C gestures bound to this driver
      * @param actions  platform-specific actions (Strategy)
@@ -42,7 +42,7 @@ public record MobileSession(AppiumDriver driver,
     public MobileSession {
         Objects.requireNonNull(driver, "driver");
         Objects.requireNonNull(profile, "profile");
-        Objects.requireNonNull(config, "config");
+        Objects.requireNonNull(settings, "settings");
         Objects.requireNonNull(waiter, "waiter");
         Objects.requireNonNull(gestures, "gestures");
         Objects.requireNonNull(actions, "actions");

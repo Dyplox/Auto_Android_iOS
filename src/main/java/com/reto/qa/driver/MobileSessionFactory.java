@@ -3,9 +3,12 @@ package com.reto.qa.driver;
 import com.reto.qa.config.DeviceProfile;
 import com.reto.qa.config.DeviceProfileFactory;
 import com.reto.qa.config.FrameworkConfig;
+import com.reto.qa.config.FrameworkSettings;
+import com.reto.qa.config.TimeoutSettings;
 import com.reto.qa.core.Gestures;
 import com.reto.qa.core.Waiter;
 import io.appium.java_client.AppiumDriver;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,35 +40,27 @@ public final class MobileSessionFactory {
     }
 
     /**
-     * Starts a session without a cloud session name.
-     *
-     * @param config configuration for one platform and environment
-     * @return the started session
-     */
-    public MobileSession start(FrameworkConfig config) {
-        return start(config, null);
-    }
-
-    /**
-     * Starts a session. If anything fails after the driver is created, the driver is quit before rethrowing.
+     * Starts a session. The settings and the device profile are validated before any driver is created; if anything
+     * fails after the driver is created, the driver is quit before rethrowing.
      *
      * @param config      configuration for one platform and environment
+     * @param server      URL of the Appium server to open the session on (see {@link AppiumServer})
      * @param sessionName session name on the cloud provider's dashboard (for example the test class);
      *                    optional, only used when the environment supports it
      * @return the started session
+     * @throws com.reto.qa.config.ConfigurationException if the configuration is invalid
      */
-    public MobileSession start(FrameworkConfig config, String sessionName) {
+    public MobileSession start(FrameworkConfig config, URL server, @Nullable String sessionName) {
+        FrameworkSettings settings = FrameworkSettings.from(config);
         DeviceProfile profile = profileFactory.create(config, sessionName);
         PlatformProvider provider = providers.forPlatform(profile.platform());
-        URL server = AppiumServerManager.serverUrl(config);
 
         LOG.info("Opening session [{}] in the '{}' environment ({})", profile, config.environment(), server.getHost());
         AppiumDriver driver = provider.createDriver(server, profile);
         try {
-            Waiter waiter = new Waiter(driver,
-                    config.getSeconds("timeout.explicit.seconds"),
-                    config.getMillis("timeout.polling.millis"));
-            return new MobileSession(driver, profile, config, waiter, new Gestures(driver),
+            TimeoutSettings timeouts = settings.timeouts();
+            Waiter waiter = new Waiter(driver, timeouts.explicit(), timeouts.polling());
+            return new MobileSession(driver, profile, settings, waiter, new Gestures(driver),
                     provider.createActions(driver, profile, waiter));
         } catch (RuntimeException e) {
             driver.quit();
