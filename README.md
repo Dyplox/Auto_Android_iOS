@@ -1,6 +1,10 @@
 
 # Cross-platform mobile automation with Appium (Android + iOS)
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
+
 A single test project for **the same app on Android and iOS**, built with **Gradle 9**, **JUnit 6** and **Java 27**.
 Page Objects, tests and test data are shared; **the only thing that changes per platform is the locators**,
 declared with Page Factory (`@AndroidFindBy` / `@iOSXCUITFindBy`) and resolved at runtime from the session.
@@ -298,6 +302,26 @@ Unit tests are never retried: they must be deterministic.
 `org.jspecify.annotations.Nullable`; NullAway checks every use of it at compile time. Page Factory fields
 (`@AndroidFindBy` / `@iOSXCUITFindBy`) are excluded because they are injected by reflection.
 
+## SonarQube Cloud
+
+Error Prone and NullAway stop bugs at compile time; SonarQube Cloud adds what they do not cover: code smells and
+maintainability, duplication, security hotspots, history and a **Quality Gate** on every pull request.
+
+- **CI**: the `unit` job runs `./gradlew sonar -Dsonar.qualitygate.wait=true` after `build`. If the Quality Gate fails
+  (for example coverage on new code drops or a new bug appears), the job fails and the PR shows it.
+- **Coverage**: JaCoCo's XML report from the unit tests. Device-only code (pages, platform actions, navigation, the
+  session factory) is excluded from the coverage metric because only the E2E suite exercises it; it is still analyzed.
+- **Locally**: `SONAR_TOKEN=<token> ./gradlew build sonar`.
+
+One-time setup on sonarcloud.io:
+
+1. Sign in with GitHub and import the `Dyplox/Auto_Android_iOS` repository (organization `dyplox`, project key
+   `Dyplox_Auto_Android_iOS`; if yours differ, update them in `build.gradle.kts` and in the badges above).
+2. *Administration › Analysis Method*: turn **Automatic Analysis off** (it conflicts with the CI analysis).
+3. *My Account › Security*: generate a token and save it in GitHub as the repository secret `SONAR_TOKEN`
+   (*Settings › Secrets and variables › Actions*).
+4. Optional: in GitHub *Settings › Branches*, require the `unit` check before merging into `main`.
+
 ## Dependency updates
 
 `.github/dependabot.yml` opens weekly pull requests for Gradle (version catalog, plugins, wrapper), npm (Appium and its
@@ -329,7 +353,7 @@ To inspect locators, use [Appium Inspector](https://github.com/appium/appium-ins
 `.github/workflows/mobile-tests.yml` (with `gradle/actions/setup-gradle`, which also validates `gradle-wrapper.jar`):
 
 - **unit** (ubuntu): `./gradlew build` on every push/PR (static analysis, formatting, unit tests and coverage; the
-  reports are uploaded as artifacts).
+  reports are uploaded as artifacts), then the SonarQube Cloud analysis and Quality Gate.
 - **android-e2e** (ubuntu + KVM emulator) and **ios-e2e** (macOS + simulator): `npm ci`, app download and
   `./gradlew e2eAndroid|e2eIos -Penv=ci`. They publish Allure results, screenshots, the Gradle report and the Appium
   log as artifacts.

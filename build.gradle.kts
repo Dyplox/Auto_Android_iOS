@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.errorprone)
     alias(libs.plugins.test.retry)
+    alias(libs.plugins.sonarqube)
 }
 
 group = "com.reto.qa"
@@ -115,6 +116,37 @@ spotless {
 // ---------------------------------------------------------------------------------------------
 jacoco {
     toolVersion = libs.versions.jacoco.get()
+}
+
+// ---------------------------------------------------------------------------------------------
+// SonarQube Cloud: ./gradlew build sonar (needs the SONAR_TOKEN environment variable; CI runs it on every push/PR).
+// Project key and organization must match the project on sonarcloud.io.
+// ---------------------------------------------------------------------------------------------
+sonar {
+    properties {
+        property("sonar.projectKey", "Dyplox_Auto_Android_iOS")
+        property("sonar.organization", "dyplox")
+        property("sonar.projectName", "Auto_Android_iOS")
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml").get().asFile.absolutePath
+        )
+        // Code that only runs against a real device: the E2E suite covers it, but E2E coverage is not measured.
+        // Excluded from the coverage metric only; it is still analyzed for bugs, smells and security.
+        property(
+            "sonar.coverage.exclusions",
+            listOf(
+                "**/app/**", "**/core/**", "**/navigation/**", "**/pages/**",
+                "**/driver/LocalAppiumServer.java", "**/driver/MobileSession.java",
+                "**/driver/MobileSessionFactory.java", "**/driver/AndroidPlatformProvider.java",
+                "**/driver/IosPlatformProvider.java"
+            ).joinToString(",")
+        )
+    }
+}
+
+tasks.named("sonar") {
+    dependsOn(tasks.jacocoTestReport)
 }
 
 tasks.jacocoTestReport {

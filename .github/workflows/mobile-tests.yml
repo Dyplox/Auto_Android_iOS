@@ -23,11 +23,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Fast and device-free: compiles and runs the framework unit tests.
+  # Fast and device-free: static analysis, formatting, unit tests, coverage and SonarQube Cloud.
   unit:
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: SonarQube Cloud uses it to tell new code from old code (blame)
+          fetch-depth: 0
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -35,6 +40,13 @@ jobs:
       # Validates gradle-wrapper.jar and caches dependencies / configuration cache
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew build
+      # Skipped when the secret is not available (for example Dependabot or fork pull requests).
+      # qualitygate.wait: the job fails if the Quality Gate fails, so the PR cannot be merged.
+      - name: SonarQube Cloud analysis
+        if: env.SONAR_TOKEN != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew sonar -Dsonar.qualitygate.wait=true
       - if: always()
         uses: actions/upload-artifact@v7
         with:

@@ -22,6 +22,7 @@ updates:
           - "com.diffplug.spotless*"
           - "net.ltgt.errorprone*"
           - "org.jacoco*"
+          - "org.sonarqube*"
 
   # npm: Appium server, drivers and the Allure CLI (package.json / package-lock.json)
   - package-ecosystem: npm
