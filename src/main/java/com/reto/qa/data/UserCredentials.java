@@ -3,8 +3,8 @@ package com.reto.qa.data;
 import java.util.Objects;
 
 /**
- * Datos de prueba inmutables construidos con Builder. {@link #toString()} enmascara la contraseña para que
- * nunca termine en logs ni en el reporte de Allure.
+ * Immutable test data built with a Builder. {@link #toString()} masks the password so it never ends up in logs or in
+ * the Allure report.
  */
 public final class UserCredentials {
 
@@ -18,23 +18,47 @@ public final class UserCredentials {
         this.passwordConfirmation = builder.passwordConfirmation != null ? builder.passwordConfirmation : builder.password;
     }
 
+    /**
+     * Starts building credentials.
+     *
+     * @return a new builder
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    /** Copia editable: permite derivar variantes ("la válida, pero con otro email"). */
+    /**
+     * Returns an editable copy, so variants can be derived ("the valid one, but with another email").
+     *
+     * @return a builder pre-filled with these values
+     */
     public Builder toBuilder() {
         return new Builder().email(email).password(password).passwordConfirmation(passwordConfirmation);
     }
 
+    /**
+     * Returns the email.
+     *
+     * @return the email
+     */
     public String email() {
         return email;
     }
 
+    /**
+     * Returns the password.
+     *
+     * @return the password
+     */
     public String password() {
         return password;
     }
 
+    /**
+     * Returns the password confirmation (the password itself unless set explicitly).
+     *
+     * @return the password confirmation
+     */
     public String passwordConfirmation() {
         return passwordConfirmation;
     }
@@ -62,6 +86,7 @@ public final class UserCredentials {
         return "UserCredentials{email='" + email + "', password='" + "*".repeat(password.length()) + "'}";
     }
 
+    /** Fluent builder for {@link UserCredentials}. */
     public static final class Builder {
 
         private String email;
@@ -71,25 +96,48 @@ public final class UserCredentials {
         private Builder() {
         }
 
+        /**
+         * Sets the email (required).
+         *
+         * @param email the email
+         * @return this builder
+         */
         public Builder email(String email) {
             this.email = email;
             return this;
         }
 
+        /**
+         * Sets the password (required).
+         *
+         * @param password the password
+         * @return this builder
+         */
         public Builder password(String password) {
             this.password = password;
             return this;
         }
 
-        /** Opcional: por defecto es igual a la contraseña. */
+        /**
+         * Sets the password confirmation. Optional: defaults to the password.
+         *
+         * @param passwordConfirmation the confirmation
+         * @return this builder
+         */
         public Builder passwordConfirmation(String passwordConfirmation) {
             this.passwordConfirmation = passwordConfirmation;
             return this;
         }
 
+        /**
+         * Builds the credentials.
+         *
+         * @return the immutable credentials
+         * @throws NullPointerException if the email or password is missing
+         */
         public UserCredentials build() {
-            Objects.requireNonNull(email, "email es obligatorio");
-            Objects.requireNonNull(password, "password es obligatorio");
+            Objects.requireNonNull(email, "email is required");
+            Objects.requireNonNull(password, "password is required");
             return new UserCredentials(this);
         }
     }

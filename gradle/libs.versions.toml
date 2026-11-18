@@ -1,11 +1,12 @@
 [versions]
 appium-java-client = "11.0.0"
-# java-client 11.0.0 está certificado con Selenium 4.50.0 (matriz de compatibilidad oficial)
+# java-client 11.0.0 is certified with Selenium 4.50.0 (official compatibility matrix)
 selenium = "4.50.0"
 junit = "5.14.4"
 assertj = "3.27.7"
 allure = "3.1.1"
-aspectj = "1.9.26"
+# 1.9.27 is the first AspectJ release that can weave Java 27 bytecode
+aspectj = "1.9.27"
 slf4j = "2.0.20"
 logback = "1.5.38"
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Descarga la app demo (WebdriverIO Native Demo App, MIT) para Android e iOS Simulator.
-# La misma app (React Native) existe en ambas plataformas: ideal para un framework
-# donde lo único que cambia son los locators.
+# Downloads the demo app (WebdriverIO Native Demo App, MIT) for Android and the iOS Simulator.
+# The same app (React Native) exists on both platforms: ideal for a framework
+# where the only thing that changes is the locators.
 #
-# Uso: ./scripts/download-apps.sh [version]     (por defecto 2.2.0)
-# Si cambias la versión, actualiza app.path en src/test/resources/config/*.properties
+# Usage: ./scripts/download-apps.sh [version]     (default 2.2.0)
+# If you change the version, update app.path in src/test/resources/config/*.properties
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
@@ -17,7 +17,7 @@ mkdir -p "$APPS_DIR"
 
 for file in "android.wdio.native.app.v${VERSION}.apk" "ios.simulator.wdio.native.app.v${VERSION}.zip"; do
   if [[ -s "$APPS_DIR/$file" ]]; then
-    echo "OK   $file ya existe"
+    echo "OK   $file already exists"
     continue
   fi
   echo "GET  $BASE_URL/$file"
@@ -25,4 +25,4 @@ for file in "android.wdio.native.app.v${VERSION}.apk" "ios.simulator.wdio.native
   mv "$APPS_DIR/$file.part" "$APPS_DIR/$file"
 done
 
-echo "Apps listas en $APPS_DIR"
+echo "Apps ready in $APPS_DIR"

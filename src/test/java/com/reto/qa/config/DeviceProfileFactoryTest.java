@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DeviceProfileFactoryTest {
 
-    /** Directorio aislado por test (FIRST: Independent); JUnit lo borra al terminar. */
+    /** Isolated directory per test (FIRST: Independent); JUnit deletes it afterwards. */
     @TempDir
     Path projectDir;
 
@@ -78,17 +78,17 @@ class DeviceProfileFactoryTest {
         assertThat(factory.resolveApp("storage:filename=app.apk")).isEqualTo("storage:filename=app.apk");
         assertThat(factory.resolveApp("bs://f7c874f21852ba57957a3fdc33f47514288c4ba4"))
                 .isEqualTo("bs://f7c874f21852ba57957a3fdc33f47514288c4ba4");
-        assertThat(factory.resolveApp("WdioDemoApp-Android")).as("custom_id de BrowserStack").isEqualTo("WdioDemoApp-Android");
+        assertThat(factory.resolveApp("WdioDemoApp-Android")).as("BrowserStack custom_id").isEqualTo("WdioDemoApp-Android");
     }
 
     @Test
     void unsupportedPlatformInAnEnvironmentFailsWithTheConfiguredReason() {
-        FrameworkConfig config = config(Platform.IOS, "unsupported.reason", "solo hay iPhones reales",
+        FrameworkConfig config = config(Platform.IOS, "unsupported.reason", "only real iPhones are available",
                 "device.name", "iPhone", "app.id", "org.app", "platform.version", "26.0");
 
         assertThatThrownBy(() -> factory(Optional.empty()).create(config))
                 .isInstanceOf(ConfigurationException.class)
-                .hasMessageContaining("solo hay iPhones reales");
+                .hasMessageContaining("only real iPhones are available");
     }
 
     @Test

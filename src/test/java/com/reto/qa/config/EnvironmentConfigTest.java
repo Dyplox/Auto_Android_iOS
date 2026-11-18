@@ -11,7 +11,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Capas por ambiente, interpolación de secretos y archivo .env (sin estado global). */
+/** Environment layers, secret interpolation and the .env file (no global state). */
 class EnvironmentConfigTest {
 
     private static Properties props(String... keyValues) {
@@ -70,7 +70,7 @@ class EnvironmentConfigTest {
                 .hasMessageContaining(".env");
     }
 
-    @ParameterizedTest(name = "sistema={0}, entorno={1} -> {2}")
+    @ParameterizedTest(name = "system={0}, variable={1} -> {2}")
     @CsvSource(nullValues = "null", value = {
             "browserstack, saucelabs, browserstack",
             "null,         SauceLabs, saucelabs",
@@ -87,12 +87,12 @@ class EnvironmentConfigTest {
     @Test
     void parsesDotEnvFiles() {
         Map<String, String> variables = FrameworkConfig.parseDotEnv(String.join("\n",
-                "# credenciales locales",
+                "# local credentials",
                 "",
                 "SAUCE_USERNAME=qa-bot",
                 "export SAUCE_ACCESS_KEY = 'abc=123'",
                 "BUILD_NAME=\"Reto SDET\"",
-                "linea sin igual"));
+                "line without equals sign"));
 
         assertThat(variables)
                 .containsEntry("SAUCE_USERNAME", "qa-bot")

@@ -11,14 +11,20 @@ import io.appium.java_client.ios.options.XCUITestOptions;
 
 import java.net.URL;
 
+/** {@link PlatformProvider} for iOS: XCUITest capabilities, {@link IOSDriver} and iOS actions. */
 public final class IosPlatformProvider implements PlatformProvider {
+
+    /** Creates the iOS provider. */
+    public IosPlatformProvider() {
+        // Stateless.
+    }
 
     @Override
     public Platform platform() {
         return Platform.IOS;
     }
 
-    /** Builder tipado de Appium: platformName=iOS y automationName=XCUITest vienen por defecto. */
+    /** Uses Appium's typed builder: {@code platformName=iOS} and {@code automationName=XCUITest} are preset. */
     @Override
     public XCUITestOptions capabilities(DeviceProfile profile) {
         requireSamePlatform(profile);
@@ -41,7 +47,7 @@ public final class IosPlatformProvider implements PlatformProvider {
     @Override
     public PlatformActions createActions(AppiumDriver driver, DeviceProfile profile, Waiter waiter) {
         if (!(driver instanceof IOSDriver iosDriver)) {
-            throw new IllegalArgumentException("Se esperaba IOSDriver y llegó " + driver.getClass().getName());
+            throw new IllegalArgumentException("Expected an IOSDriver but got " + driver.getClass().getName());
         }
         return new IosPlatformActions(iosDriver, profile.appId(), waiter);
     }

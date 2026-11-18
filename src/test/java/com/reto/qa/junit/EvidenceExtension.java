@@ -16,17 +16,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
- * Adjunta evidencia (screenshot + page source) cuando un test falla y vuelve a lanzar el error.
+ * Attaches evidence (screenshot + page source) when a test fails, then rethrows the error.
  *
- * <p>Se usa {@link TestExecutionExceptionHandler} y no {@code TestWatcher}: corre mientras el test sigue "en
- * ejecución", así los adjuntos quedan dentro del test fallido en Allure. También deja el PNG en
- * {@code build/screenshots/<plataforma>/} para CI sin Allure.</p>
+ * <p>{@link TestExecutionExceptionHandler} is used instead of {@code TestWatcher}: it runs while the test is still
+ * "executing", so the attachments end up inside the failed test in Allure. It also saves the PNG to
+ * {@code build/screenshots/<platform>/} for CI runs without Allure.</p>
  */
 public final class EvidenceExtension implements TestExecutionExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(EvidenceExtension.class);
     private static final Path SCREENSHOTS_DIR = Paths.get("build", "screenshots");
 
+    /** Created by JUnit through {@link MobileTest}. */
+    public EvidenceExtension() {
+        // Stateless.
+    }
+
+    /** Captures evidence if the class has a session, then rethrows the original error unchanged. */
     @Override
     public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
         AppiumSessionExtension.findSession(context).ifPresent(session -> captureEvidence(session, context));
@@ -34,7 +40,7 @@ public final class EvidenceExtension implements TestExecutionExceptionHandler {
     }
 
     private static void captureEvidence(MobileSession session, ExtensionContext context) {
-        // El hash del uniqueId distingue las invocaciones de un @ParameterizedTest.
+        // The uniqueId hash tells apart the invocations of a @ParameterizedTest.
         String testName = context.getRequiredTestClass().getSimpleName() + "." + context.getRequiredTestMethod().getName()
                 + "-" + Integer.toHexString(context.getUniqueId().hashCode());
         try {
@@ -47,10 +53,10 @@ public final class EvidenceExtension implements TestExecutionExceptionHandler {
             Path file = SCREENSHOTS_DIR.resolve(session.platform().key()).resolve(testName + ".png");
             Files.createDirectories(file.getParent());
             Files.write(file, screenshot);
-            LOG.info("Evidencia de '{}' guardada en {}", context.getDisplayName(), file.toAbsolutePath());
+            LOG.info("Evidence for '{}' saved to {}", context.getDisplayName(), file.toAbsolutePath());
         } catch (IOException | RuntimeException e) {
-            // La evidencia nunca debe ocultar la causa real del fallo.
-            LOG.warn("No se pudo capturar evidencia de '{}': {}", context.getDisplayName(), e.getMessage());
+            // Evidence must never hide the real cause of the failure.
+            LOG.warn("Could not capture evidence for '{}': {}", context.getDisplayName(), e.getMessage());
         }
     }
 }

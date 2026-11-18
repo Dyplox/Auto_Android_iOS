@@ -18,17 +18,18 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** E2E tests for navigating between the main screens. */
 @MobileTest
-@Epic("Navegación")
-@Feature("Barra de pestañas")
-@DisplayName("Navegación")
+@Epic("Navigation")
+@Feature("Tab bar")
+@DisplayName("Navigation")
 class NavigationTest {
 
-    @ParameterizedTest(name = "Abre {0}")
+    @ParameterizedTest(name = "Opens {0}")
     @EnumSource(Screen.class)
     @Tag("smoke")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Cada pantalla principal es navegable")
+    @DisplayName("Each main screen can be opened")
     void shouldNavigateToScreen(Screen screen, WdioDemoApp app) {
         BasePage page = switch (screen) {
             case LOGIN -> app.open(screen, LoginPage::new);
@@ -36,6 +37,6 @@ class NavigationTest {
             case HOME -> app.open(screen, HomePage::new);
         };
 
-        assertThat(page.isLoaded()).as("La pantalla %s está visible", screen).isTrue();
+        assertThat(page.isLoaded()).as("Screen %s is visible", screen).isTrue();
     }
 }

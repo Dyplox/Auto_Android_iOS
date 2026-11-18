@@ -23,8 +23,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** E2E tests for logging in. */
 @MobileTest
-@Epic("Autenticación")
+@Epic("Authentication")
 @Feature("Login")
 @DisplayName("Login")
 class LoginTest {
@@ -32,22 +33,22 @@ class LoginTest {
     @Test
     @Tag("smoke")
     @Severity(SeverityLevel.BLOCKER)
-    @DisplayName("Credenciales válidas muestran la alerta de éxito")
+    @DisplayName("Valid credentials show the success alert")
     void shouldLoginWithValidCredentials(WdioDemoApp app) {
         LoginPage loginPage = app.open(Screen.LOGIN, LoginPage::new);
 
         loginPage.loginWith(CredentialsMother.valid());
 
         NativeAlert alert = app.alert().waitUntilVisible();
-        assertThat(alert.title()).as("Título de la alerta de login").contains("Success");
+        assertThat(alert.title()).as("Login alert title").contains("Success");
         alert.accept();
-        assertThat(alert.isDisplayed()).as("La alerta se cierra al aceptar").isFalse();
+        assertThat(alert.isDisplayed()).as("The alert closes when accepted").isFalse();
     }
 
-    @ParameterizedTest(name = "{1} con {0}")
+    @ParameterizedTest(name = "{1} with {0}")
     @MethodSource("invalidCredentials")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Credenciales inválidas muestran el mensaje de validación")
+    @DisplayName("Invalid credentials show the validation message")
     void shouldShowValidationErrorForInvalidCredentials(UserCredentials credentials,
                                                         LoginValidationError expectedError,
                                                         WdioDemoApp app) {
@@ -56,7 +57,7 @@ class LoginTest {
         loginPage.loginWith(credentials);
 
         assertThat(loginPage.isValidationErrorDisplayed(expectedError))
-                .as("Se muestra el error %s para %s", expectedError, credentials)
+                .as("Error %s is shown for %s", expectedError, credentials)
                 .isTrue();
     }
 

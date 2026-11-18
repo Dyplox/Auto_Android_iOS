@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# Sube la app demo al almacenamiento del proveedor cloud.
+# Uploads the demo app to the cloud provider's storage.
 #
-# Uso: ./scripts/upload-app.sh browserstack|saucelabs [version]   (version por defecto 2.2.0)
+# Usage: ./scripts/upload-app.sh browserstack|saucelabs [version]   (default version 2.2.0)
 #
-# Credenciales desde variables de entorno o el archivo .env:
+# Credentials come from environment variables or the .env file:
 #   BrowserStack: BROWSERSTACK_USERNAME, BROWSERSTACK_ACCESS_KEY
-#   Sauce Labs:   SAUCE_USERNAME, SAUCE_ACCESS_KEY, SAUCE_REGION (opcional, us-west-1)
+#   Sauce Labs:   SAUCE_USERNAME, SAUCE_ACCESS_KEY, SAUCE_REGION (optional, us-west-1)
 #
-# Los nombres coinciden con app.path de config/env/<proveedor>-<plataforma>.properties:
-#   BrowserStack -> custom_id "WdioDemoApp-Android" (siempre apunta a la última versión subida)
-#   Sauce Labs   -> storage:filename=<nombre del archivo>
+# The names match app.path in config/env/<provider>-<platform>.properties:
+#   BrowserStack -> custom_id "WdioDemoApp-Android" (always points to the latest upload)
+#   Sauce Labs   -> storage:filename=<file name>
 # -----------------------------------------------------------------------------
 set -euo pipefail
 
@@ -21,7 +21,7 @@ APPS_DIR="$ROOT_DIR/apps"
 ANDROID_APP="$APPS_DIR/android.wdio.native.app.v${VERSION}.apk"
 IOS_APP="$APPS_DIR/ios.simulator.wdio.native.app.v${VERSION}.zip"
 
-# Variables del .env sin pisar las que ya existen en el entorno
+# Load .env variables without overriding those already set in the environment
 if [[ -f "$ROOT_DIR/.env" ]]; then
   while IFS='=' read -r key value; do
     key="${key#export }"; key="$(echo "$key" | xargs)"
@@ -34,7 +34,7 @@ fi
 require() {
   for name in "$@"; do
     if [[ -z "${!name:-}" ]]; then
-      echo "Falta la variable $name (defínela en el entorno o en .env)" >&2
+      echo "Missing variable $name (define it in the environment or in .env)" >&2
       exit 1
     fi
   done
@@ -42,7 +42,7 @@ require() {
 
 require_file() {
   if [[ ! -s "$1" ]]; then
-    echo "No existe $1. Ejecuta primero ./scripts/download-apps.sh $VERSION" >&2
+    echo "$1 does not exist. Run ./scripts/download-apps.sh $VERSION first" >&2
     exit 1
   fi
 }
@@ -51,20 +51,20 @@ case "$PROVIDER" in
   browserstack)
     require BROWSERSTACK_USERNAME BROWSERSTACK_ACCESS_KEY
     require_file "$ANDROID_APP"
-    echo "Subiendo $(basename "$ANDROID_APP") a BrowserStack (custom_id WdioDemoApp-Android)..."
+    echo "Uploading $(basename "$ANDROID_APP") to BrowserStack (custom_id WdioDemoApp-Android)..."
     curl -fsS -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
       -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
       -F "file=@$ANDROID_APP" \
       -F 'data={"custom_id": "WdioDemoApp-Android"}'
     echo
-    echo "iOS: BrowserStack solo ofrece iPhones reales (.ipa firmado) y la app demo solo tiene build de simulador."
+    echo "iOS: BrowserStack only offers real iPhones (signed .ipa) and the demo app only has a simulator build."
     ;;
   saucelabs)
     require SAUCE_USERNAME SAUCE_ACCESS_KEY
     REGION="${SAUCE_REGION:-us-west-1}"
     for app in "$ANDROID_APP" "$IOS_APP"; do
       require_file "$app"
-      echo "Subiendo $(basename "$app") a Sauce Labs ($REGION)..."
+      echo "Uploading $(basename "$app") to Sauce Labs ($REGION)..."
       curl -fsS -u "$SAUCE_USERNAME:$SAUCE_ACCESS_KEY" \
         -X POST "https://api.${REGION}.saucelabs.com/v1/storage/upload" \
         -F "payload=@$app" \
@@ -73,7 +73,7 @@ case "$PROVIDER" in
     done
     ;;
   *)
-    echo "Uso: $0 browserstack|saucelabs [version]" >&2
+    echo "Usage: $0 browserstack|saucelabs [version]" >&2
     exit 1
     ;;
 esac

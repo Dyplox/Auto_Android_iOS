@@ -11,8 +11,9 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * Traduce la configuración ({@link FrameworkConfig}) a un {@link DeviceProfile}: mapea propiedades, resuelve la
- * ruta de la app (fail fast si no existe), en iOS local elige simulador si hace falta y, en la nube, nombra la sesión.
+ * Turns the configuration ({@link FrameworkConfig}) into a {@link DeviceProfile}: maps the properties, resolves the
+ * app path (failing fast if the file does not exist), picks a local iOS simulator when needed and, in the cloud,
+ * names the session.
  */
 public final class DeviceProfileFactory {
 
@@ -29,27 +30,47 @@ public final class DeviceProfileFactory {
     private final Path projectDir;
     private final IosSimulatorLocator simulatorLocator;
 
+    /** Creates a factory that resolves app paths against the working directory and looks up real simulators. */
     public DeviceProfileFactory() {
         this(Paths.get(System.getProperty("user.dir")), new IosSimulatorLocator());
     }
 
+    /**
+     * Creates a factory with explicit collaborators (used by unit tests).
+     *
+     * @param projectDir       directory that relative app paths are resolved against
+     * @param simulatorLocator strategy that picks an iOS simulator
+     */
     DeviceProfileFactory(Path projectDir, IosSimulatorLocator simulatorLocator) {
         this.projectDir = Objects.requireNonNull(projectDir, "projectDir");
         this.simulatorLocator = Objects.requireNonNull(simulatorLocator, "simulatorLocator");
     }
 
+    /**
+     * Builds the device profile without a cloud session name.
+     *
+     * @param config configuration for one platform and environment
+     * @return the validated device profile
+     * @throws ConfigurationException if a required property is missing or invalid
+     */
     public DeviceProfile create(FrameworkConfig config) {
         return create(config, null);
     }
 
     /**
-     * @param sessionName nombre visible de la sesión en el dashboard del proveedor cloud (p. ej. la clase de prueba);
-     *                    se ignora si el ambiente no define {@code cloud.session-name-option}
+     * Builds the device profile.
+     *
+     * @param config      configuration for one platform and environment
+     * @param sessionName name shown for the session on the cloud provider's dashboard (for example the test class);
+     *                    ignored when the environment does not define {@code cloud.session-name-option}
+     * @return the validated device profile
+     * @throws ConfigurationException if the platform is not available in the environment, or a required property is
+     *                                missing or invalid
      */
     public DeviceProfile create(FrameworkConfig config, String sessionName) {
         config.find(UNSUPPORTED_REASON).ifPresent(reason -> {
-            throw new ConfigurationException(config.platform().w3cName() + " no está disponible en el ambiente '"
-                    + config.environment() + "': " + reason);
+            throw new ConfigurationException(config.platform().w3cName() + " is not available in the '"
+                    + config.environment() + "' environment: " + reason);
         });
 
         DeviceProfile.Builder builder = DeviceProfile.builder(config.platform())
@@ -63,7 +84,7 @@ public final class DeviceProfileFactory {
 
         if (needsSimulatorLookup(config)) {
             simulatorLocator.locate(config.get("device.name")).ifPresent(simulator -> {
-                LOG.info("Simulador iOS elegido automáticamente: {} (iOS {}) {}",
+                LOG.info("Auto-selected iOS simulator: {} (iOS {}) {}",
                         simulator.name(), simulator.runtime(), simulator.udid());
                 builder.deviceName(simulator.name()).udid(simulator.udid());
             });
@@ -75,8 +96,8 @@ public final class DeviceProfileFactory {
     }
 
     /**
-     * Opciones del proveedor cloud agrupadas en su capability ({@code bstack:options}, {@code sauce:options}…):
-     * {@code cloud.option.<clave>=<valor>} se envía como {@code <cloud.options-capability>.<clave>}.
+     * Groups the cloud provider options under their capability ({@code bstack:options}, {@code sauce:options}…):
+     * {@code cloud.option.<key>=<value>} is sent as {@code <cloud.options-capability>.<key>}.
      */
     private static void addCloudOptions(FrameworkConfig config, DeviceProfile.Builder builder, String optionsCapability,
                                         String sessionName) {
@@ -88,7 +109,7 @@ public final class DeviceProfileFactory {
         }
     }
 
-    /** Solo en simuladores locales: en la nube el proveedor asigna el dispositivo. */
+    /** Local simulators only: in the cloud the provider assigns the device. */
     private static boolean needsSimulatorLookup(FrameworkConfig config) {
         return config.platform() == Platform.IOS
                 && config.find(AUTO_SELECT_SIMULATOR).map(Boolean::parseBoolean).orElse(true)
@@ -97,9 +118,13 @@ public final class DeviceProfileFactory {
     }
 
     /**
-     * Un archivo local (.apk, .zip, .ipa…) se resuelve contra la raíz del proyecto y debe existir. Cualquier otra
-     * referencia se envía tal cual: URL, {@code storage:filename=…} (Sauce Labs), {@code bs://…} o un custom_id
-     * (BrowserStack).
+     * Resolves the {@code app.path} value. A local file (.apk, .zip, .ipa…) is resolved against the project root and
+     * must exist. Any other reference is passed through as is: a URL, {@code storage:filename=…} (Sauce Labs),
+     * {@code bs://…} or a custom_id (BrowserStack).
+     *
+     * @param app configured app reference
+     * @return the absolute path of a local file, or the reference unchanged
+     * @throws ConfigurationException if a local file does not exist
      */
     String resolveApp(String app) {
         String lower = app.toLowerCase(Locale.ROOT);
@@ -111,13 +136,18 @@ public final class DeviceProfileFactory {
         }
         Path path = projectDir.resolve(app).normalize();
         if (!Files.exists(path)) {
-            throw new ConfigurationException("No se encontró la app en '" + path + "'. "
-                    + "Descárgala con ./scripts/download-apps.sh o ajusta app.path");
+            throw new ConfigurationException("App not found at '" + path + "'. "
+                    + "Download it with ./scripts/download-apps.sh or adjust app.path");
         }
         return path.toAbsolutePath().toString();
     }
 
-    /** Las capabilities llegan como texto desde los .properties: convierte booleanos y enteros. */
+    /**
+     * Capabilities arrive as text from the {@code .properties} files; this converts booleans and integers.
+     *
+     * @param value raw text value
+     * @return a {@link Boolean}, an {@link Integer} or the original string
+     */
     static Object typed(String value) {
         if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
             return Boolean.parseBoolean(value);

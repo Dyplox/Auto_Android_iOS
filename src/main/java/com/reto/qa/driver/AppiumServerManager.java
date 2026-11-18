@@ -16,15 +16,15 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 /**
- * Resuelve la URL del Appium server. Por defecto usa un server ya levantado ({@code appium.server.url});
- * con {@code appium.server.autostart=true} arranca uno local por JVM en un puerto libre (así Android e iOS pueden
- * correr en paralelo, cada uno en su JVM, sin chocar).
- * Si existe {@code node_modules/appium} en el proyecto se usa esa versión fijada en package.json.
+ * Resolves the Appium server URL. By default it uses a server that is already running ({@code appium.server.url});
+ * with {@code appium.server.autostart=true} it starts one local server per JVM on a free port (so Android and iOS can
+ * run in parallel, each in its own JVM, without clashing).
+ * If {@code node_modules/appium} exists in the project, the version pinned in package.json is used.
  */
 public final class AppiumServerManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(AppiumServerManager.class);
-    /** Ejecutable oficial del paquete appium (su "bin"); en Appium 4 build/lib/main.js solo se mantiene por compatibilidad. */
+    /** Official entry point of the appium package (its "bin"); in Appium 4, build/lib/main.js is kept only for compatibility. */
     private static final Path LOCAL_APPIUM_MAIN = Paths.get("node_modules", "appium", "index.js");
 
     private static AppiumDriverLocalService service;
@@ -33,22 +33,29 @@ public final class AppiumServerManager {
     private AppiumServerManager() {
     }
 
+    /**
+     * Returns the URL of the Appium server to use, starting a local one first if autostart is enabled.
+     *
+     * @param config configuration for the current platform and environment
+     * @return the server URL
+     */
     public static synchronized URL serverUrl(FrameworkConfig config) {
         if (!config.getBoolean("appium.server.autostart")) {
             return config.getUrl("appium.server.url");
         }
         if (service == null || !service.isRunning()) {
             service = buildService(config);
-            LOG.info("Iniciando Appium server local (log en build/appium-server-{}.log)", config.platform().key());
+            LOG.info("Starting local Appium server (log in build/appium-server-{}.log)", config.platform().key());
             service.start();
             registerShutdownHook();
         }
         return service.getUrl();
     }
 
+    /** Stops the local Appium server, if this JVM started one. Also runs as a shutdown hook. */
     public static synchronized void stop() {
         if (service != null && service.isRunning()) {
-            LOG.info("Deteniendo Appium server local");
+            LOG.info("Stopping local Appium server");
             service.stop();
         }
     }
@@ -59,7 +66,7 @@ public final class AppiumServerManager {
         try {
             Files.createDirectories(logFile.getParent());
         } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo crear " + logFile.getParent(), e);
+            throw new UncheckedIOException("Could not create " + logFile.getParent(), e);
         }
 
         AppiumServiceBuilder builder = new AppiumServiceBuilder()

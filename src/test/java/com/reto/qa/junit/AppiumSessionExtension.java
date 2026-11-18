@@ -16,18 +16,18 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import java.util.Optional;
 
 /**
- * Ciclo de vida de la sesión de Appium con el modelo de extensiones de JUnit 5.
+ * Appium session lifecycle built on the JUnit 5 extension model.
  *
  * <ul>
- *     <li><b>Una sesión por clase</b>, guardada en el {@link ExtensionContext.Store} de la clase: no hay
- *     {@code ThreadLocal} ni estado estático, así que es seguro aunque JUnit reparta trabajo entre hilos.</li>
- *     <li><b>App reiniciada antes de cada test</b>: cada test parte del mismo estado y no depende de otro
- *     (Independent y Repeatable de FIRST) sin pagar el costo de una sesión nueva (Fast).</li>
- *     <li><b>Inyección por parámetro</b> de {@link WdioDemoApp} y {@link MobileSession} (DIP): los tests declaran
- *     lo que necesitan en vez de buscarlo.</li>
- *     <li>La plataforma llega como parámetro de configuración {@code platform} y el ambiente como {@code test.env}
- *     (las tareas de Gradle los envían como system properties). El código de los tests es idéntico para Android e
- *     iOS y para cualquier ambiente (local, CI o nube).</li>
+ *     <li><b>One session per class</b>, stored in the class's {@link ExtensionContext.Store}: there is no
+ *     {@code ThreadLocal} or static state, so it is safe even when JUnit spreads work across threads.</li>
+ *     <li><b>App restarted before each test</b>: every test starts from the same state and does not depend on another
+ *     one (Independent and Repeatable in FIRST) without paying for a new session (Fast).</li>
+ *     <li><b>Parameter injection</b> of {@link WdioDemoApp} and {@link MobileSession} (DIP): tests declare what they
+ *     need instead of looking it up.</li>
+ *     <li>The platform arrives as the {@code platform} configuration parameter and the environment as
+ *     {@code test.env} (the Gradle tasks pass them as system properties). The test code is identical for Android and
+ *     iOS and for any environment (local, CI or cloud).</li>
  * </ul>
  */
 public final class AppiumSessionExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback,
@@ -39,6 +39,12 @@ public final class AppiumSessionExtension implements BeforeAllCallback, AfterAll
 
     private final MobileSessionFactory sessionFactory = new MobileSessionFactory();
 
+    /** Created by JUnit through {@link MobileTest}. */
+    public AppiumSessionExtension() {
+        // Stateless apart from the session factory.
+    }
+
+    /** Opens the class's session, named after the test class on cloud dashboards. */
     @Override
     public void beforeAll(ExtensionContext context) {
         Platform platform = Platform.from(context.getConfigurationParameter("platform").orElse(DEFAULT_PLATFORM));
@@ -46,11 +52,13 @@ public final class AppiumSessionExtension implements BeforeAllCallback, AfterAll
         context.getStore(NAMESPACE).put(SESSION_KEY, session);
     }
 
+    /** Restarts the app so each test starts from the same state. */
     @Override
     public void beforeEach(ExtensionContext context) {
         WdioDemoApp.on(session(context)).restart();
     }
 
+    /** Closes the class's session. */
     @Override
     public void afterAll(ExtensionContext context) {
         MobileSession session = context.getStore(NAMESPACE).remove(SESSION_KEY, MobileSession.class);
@@ -59,25 +67,32 @@ public final class AppiumSessionExtension implements BeforeAllCallback, AfterAll
         }
     }
 
+    /** Supports {@link WdioDemoApp} and {@link MobileSession} parameters. */
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         Class<?> type = parameterContext.getParameter().getType();
         return type == WdioDemoApp.class || type == MobileSession.class;
     }
 
+    /** Resolves the facade or the raw session for the current class. */
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
         MobileSession session = session(extensionContext);
         return parameterContext.getParameter().getType() == WdioDemoApp.class ? WdioDemoApp.on(session) : session;
     }
 
-    /** Sesión de la clase en curso; el Store de un test busca también en el de su clase. */
+    /**
+     * Returns the session of the current class; a test's Store also looks in its class's Store.
+     *
+     * @param context test or class context
+     * @return the session, or empty if none was opened
+     */
     static Optional<MobileSession> findSession(ExtensionContext context) {
         return Optional.ofNullable(context.getStore(NAMESPACE).get(SESSION_KEY, MobileSession.class));
     }
 
     private static MobileSession session(ExtensionContext context) {
         return findSession(context).orElseThrow(() -> new ExtensionConfigurationException(
-                "No hay sesión de Appium para " + context.getDisplayName() + ". ¿La clase está anotada con @MobileTest?"));
+                "No Appium session for " + context.getDisplayName() + ". Is the class annotated with @MobileTest?"));
     }
 }

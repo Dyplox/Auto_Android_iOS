@@ -15,8 +15,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** E2E tests for the Forms screen. */
 @MobileTest
-@Epic("Componentes de formulario")
+@Epic("Form components")
 @Feature("Forms")
 @DisplayName("Forms")
 class FormsTest {
@@ -24,7 +25,7 @@ class FormsTest {
     @Test
     @Tag("smoke")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("El texto escrito se refleja en el resultado")
+    @DisplayName("Typed text is echoed in the result")
     void shouldEchoTypedText(WdioDemoApp app) {
         String text = "Appium cross-platform";
         FormsPage formsPage = app.open(Screen.FORMS, FormsPage::new);
@@ -36,21 +37,21 @@ class FormsTest {
 
     @Test
     @Severity(SeverityLevel.NORMAL)
-    @DisplayName("El switch alterna entre encendido y apagado")
+    @DisplayName("The switch toggles between on and off")
     void shouldToggleSwitch(WdioDemoApp app) {
         FormsPage formsPage = app.open(Screen.FORMS, FormsPage::new);
-        assertThat(formsPage.switchLabel()).as("Estado inicial").endsWith("ON");
+        assertThat(formsPage.switchLabel()).as("Initial state").endsWith("ON");
 
         formsPage.toggleSwitch();
-        assertThat(formsPage.switchLabel()).as("Tras encender").endsWith("OFF");
+        assertThat(formsPage.switchLabel()).as("After first toggle").endsWith("OFF");
 
         formsPage.toggleSwitch();
-        assertThat(formsPage.switchLabel()).as("Tras apagar").endsWith("ON");
+        assertThat(formsPage.switchLabel()).as("After second toggle").endsWith("ON");
     }
 
     @Test
     @Severity(SeverityLevel.NORMAL)
-    @DisplayName("El botón 'Active' abre una alerta nativa")
+    @DisplayName("The 'Active' button opens a native alert")
     void shouldOpenNativeAlertFromActiveButton(WdioDemoApp app) {
         FormsPage formsPage = app.open(Screen.FORMS, FormsPage::new);
 

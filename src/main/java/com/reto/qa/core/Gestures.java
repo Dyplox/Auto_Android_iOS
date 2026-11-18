@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Gestos con W3C Actions: el mismo código funciona en Android e iOS
- * (TouchAction fue eliminado en java-client 11).
+ * Gestures built on W3C Actions: the same code works on Android and iOS
+ * (TouchAction was removed in java-client 11).
  */
 public final class Gestures {
 
@@ -24,17 +24,28 @@ public final class Gestures {
 
     private final AppiumDriver driver;
 
+    /**
+     * Creates the gestures for a driver.
+     *
+     * @param driver the Appium driver
+     */
     public Gestures(AppiumDriver driver) {
         this.driver = Objects.requireNonNull(driver, "driver");
     }
 
-    /** Desliza el dedo hacia arriba (el contenido baja). */
+    /** Swipes the finger up, from 70% to 30% of the screen height (the content scrolls down). */
     public void swipeUp() {
         Dimension size = driver.manage().window().getSize();
         int x = size.getWidth() / 2;
         swipe(new Point(x, (int) (size.getHeight() * 0.70)), new Point(x, (int) (size.getHeight() * 0.30)));
     }
 
+    /**
+     * Performs a one-finger swipe between two viewport points.
+     *
+     * @param from start point
+     * @param to   end point
+     */
     public void swipe(Point from, Point to) {
         PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
         Sequence swipe = new Sequence(finger, 0)
@@ -47,8 +58,12 @@ public final class Gestures {
     }
 
     /**
-     * Hace scroll hasta que el elemento sea visible. En Android los elementos fuera de pantalla no existen en el
-     * árbol; en iOS existen pero no son visibles: {@link Waiter#isDisplayedNow(WebElement)} cubre ambos casos.
+     * Scrolls until the element is visible. On Android, off-screen elements are not in the tree; on iOS they are in
+     * the tree but not visible: {@link Waiter#isDisplayedNow(WebElement)} covers both cases.
+     *
+     * @param element   element to bring into view
+     * @param maxSwipes maximum number of swipes
+     * @throws NoSuchElementException if the element is still not visible after {@code maxSwipes} swipes
      */
     public void scrollUntilVisible(WebElement element, int maxSwipes) {
         for (int attempt = 0; attempt <= maxSwipes; attempt++) {
@@ -59,6 +74,6 @@ public final class Gestures {
                 swipeUp();
             }
         }
-        throw new NoSuchElementException("El elemento no apareció tras " + maxSwipes + " swipes");
+        throw new NoSuchElementException("Element did not appear after " + maxSwipes + " swipes");
     }
 }

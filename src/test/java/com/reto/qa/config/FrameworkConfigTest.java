@@ -9,7 +9,7 @@ import java.util.Properties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Pruebas unitarias puras: no tocan System properties reales ni archivos (FIRST: Fast, Independent). */
+/** Pure unit tests: they touch neither real system properties nor files (FIRST: Fast, Independent). */
 class FrameworkConfigTest {
 
     private static Properties props(String... keyValues) {

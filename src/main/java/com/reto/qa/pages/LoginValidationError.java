@@ -1,6 +1,6 @@
 package com.reto.qa.pages;
 
-/** Errores de validación que muestra el formulario de Login / Sign up. */
+/** Validation errors shown by the Login / Sign up form. */
 public enum LoginValidationError {
 
     /** "Please enter a valid email address". */

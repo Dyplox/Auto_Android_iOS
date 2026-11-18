@@ -14,11 +14,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Elige un simulador de iOS disponible cuando no se configuró {@code device.udid} ni {@code platform.version}.
- * Así la suite corre "out of the box" en cualquier Mac sin adivinar la versión de Xcode instalada.
+ * Picks an available iOS simulator when neither {@code device.udid} nor {@code platform.version} is configured,
+ * so the suite runs out of the box on any Mac without guessing which Xcode version is installed.
  *
- * <p>Prioridad: 1) un iPhone ya encendido, 2) el {@code device.name} configurado en el runtime más nuevo,
- * 3) el primer iPhone del runtime más nuevo.</p>
+ * <p>Priority: 1) an iPhone that is already booted, 2) the configured {@code device.name} on the newest runtime,
+ * 3) the first iPhone on the newest runtime.</p>
  */
 public final class IosSimulatorLocator {
 
@@ -28,19 +28,36 @@ public final class IosSimulatorLocator {
 
     private final Supplier<Optional<String>> simctlOutput;
 
+    /** Creates a locator that runs {@code xcrun simctl list devices available} (macOS only). */
     public IosSimulatorLocator() {
         this(IosSimulatorLocator::runSimctl);
     }
 
-    /** Permite inyectar la salida de {@code simctl} (pruebas unitarias sin Mac). */
+    /**
+     * Lets tests inject the {@code simctl} output, so they run without a Mac.
+     *
+     * @param simctlOutput supplies the command output, or empty when it is not available
+     */
     IosSimulatorLocator(Supplier<Optional<String>> simctlOutput) {
         this.simctlOutput = simctlOutput;
     }
 
+    /**
+     * Finds the best available iPhone simulator.
+     *
+     * @param preferredName device name to prefer, for example {@code iPhone 17}
+     * @return the chosen simulator, or empty when not on macOS or no iPhone simulator is available
+     */
     public Optional<Simulator> locate(String preferredName) {
         return simctlOutput.get().flatMap(output -> choose(parse(output), preferredName));
     }
 
+    /**
+     * Parses the output of {@code xcrun simctl list devices available}, keeping only iPhones on iOS runtimes.
+     *
+     * @param simctlOutput raw command output
+     * @return the iPhone simulators found, in output order
+     */
     static List<Simulator> parse(String simctlOutput) {
         List<Simulator> simulators = new ArrayList<>();
         String runtime = null;
@@ -59,6 +76,13 @@ public final class IosSimulatorLocator {
         return simulators;
     }
 
+    /**
+     * Applies the selection priority described in the class Javadoc.
+     *
+     * @param simulators    candidates
+     * @param preferredName device name to prefer
+     * @return the chosen simulator, or empty when there are no candidates
+     */
     static Optional<Simulator> choose(List<Simulator> simulators, String preferredName) {
         Comparator<Simulator> newestRuntimeFirst = Comparator.comparing(Simulator::runtime, IosSimulatorLocator::compareVersions).reversed();
         Optional<Simulator> booted = simulators.stream().filter(Simulator::booted).findFirst();
@@ -71,6 +95,13 @@ public final class IosSimulatorLocator {
         return preferred.isPresent() ? preferred : simulators.stream().min(newestRuntimeFirst);
     }
 
+    /**
+     * Compares dotted numeric versions ({@code 18.2} &lt; {@code 26.0}); missing segments count as zero.
+     *
+     * @param left  first version
+     * @param right second version
+     * @return a negative number, zero or a positive number, as in {@link Comparator#compare}
+     */
     static int compareVersions(String left, String right) {
         String[] l = left.split("\\.");
         String[] r = right.split("\\.");
@@ -105,7 +136,14 @@ public final class IosSimulatorLocator {
         }
     }
 
-    /** Simulador disponible según {@code simctl}. */
+    /**
+     * An available simulator as reported by {@code simctl}.
+     *
+     * @param name    device name, for example {@code iPhone 17}
+     * @param udid    simulator UDID
+     * @param runtime iOS runtime version, for example {@code 26.0}
+     * @param booted  whether the simulator is already running
+     */
     public record Simulator(String name, String udid, String runtime, boolean booted) {
     }
 }

@@ -1,8 +1,13 @@
 package com.reto.qa.navigation;
 
-/** Estrategia de navegación (patrón Strategy): los tests no saben si se navega por UI o por deep link. */
+/** Navigation strategy (Strategy pattern): tests do not know whether navigation uses the UI or a deep link. */
 @FunctionalInterface
 public interface Navigator {
 
+    /**
+     * Opens a screen of the app.
+     *
+     * @param screen the screen to open
+     */
     void goTo(Screen screen);
 }

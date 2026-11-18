@@ -6,7 +6,7 @@ import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import io.qameta.allure.Step;
 import org.openqa.selenium.WebElement;
 
-/** Pantalla "Forms": input, switch y botones. */
+/** The "Forms" screen: text input, switch and buttons. */
 public final class FormsPage extends BasePage {
 
     @AndroidFindBy(accessibility = "Forms-screen")
@@ -33,6 +33,11 @@ public final class FormsPage extends BasePage {
     @iOSXCUITFindBy(accessibility = "button-Active")
     private WebElement activeButton;
 
+    /**
+     * Creates the page for the session's platform.
+     *
+     * @param session the current session
+     */
     public FormsPage(MobileSession session) {
         super(session);
     }
@@ -42,38 +47,57 @@ public final class FormsPage extends BasePage {
         return screen;
     }
 
-    /** El centro de la pantalla puede caer sobre el switch: se toca el texto de resultado, que no es interactivo. */
+    /** The center of the screen may land on the switch, so the non-interactive result text is tapped instead. */
     @Override
     protected WebElement keyboardDismissArea() {
         return typedTextResult;
     }
 
-    @Step("Escribir '{text}' en el campo de texto")
+    /**
+     * Types into the text input and hides the keyboard.
+     *
+     * @param text text to type
+     * @return this page
+     */
+    @Step("Type '{text}' into the text field")
     public FormsPage typeText(String text) {
         type(textInput, text);
         hideKeyboard();
         return this;
     }
 
+    /**
+     * Returns the text that the screen echoes below the input.
+     *
+     * @return the echoed text
+     */
     public String typedTextResult() {
         return textOf(typedTextResult);
     }
 
-    @Step("Cambiar el estado del switch")
+    /**
+     * Toggles the switch.
+     *
+     * @return this page
+     */
+    @Step("Toggle the switch")
     public FormsPage toggleSwitch() {
         tap(switchToggle);
         return this;
     }
 
     /**
-     * Se valida el texto que acompaña al switch y no el atributo del switch ("checked" en Android, "value" en iOS):
-     * así la verificación es idéntica en ambas plataformas.
+     * Returns the label shown next to the switch. The label is checked instead of the switch attribute ("checked" on
+     * Android, "value" on iOS), so the assertion is identical on both platforms.
+     *
+     * @return the switch label
      */
     public String switchLabel() {
         return textOf(switchLabel);
     }
 
-    @Step("Tocar el botón 'Active'")
+    /** Scrolls to the "Active" button and taps it. */
+    @Step("Tap the 'Active' button")
     public void tapActiveButton() {
         scrollTo(activeButton);
         tap(activeButton);

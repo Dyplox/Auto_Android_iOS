@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.util.Objects;
 
-/** Orquesta la creación de una {@link MobileSession}; cada pieza la construye su propio responsable. */
+/** Orchestrates the creation of a {@link MobileSession}; each part is built by the class responsible for it. */
 public final class MobileSessionFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(MobileSessionFactory.class);
@@ -20,29 +20,46 @@ public final class MobileSessionFactory {
     private final PlatformProviders providers;
     private final DeviceProfileFactory profileFactory;
 
+    /** Creates a factory with the default Android and iOS providers. */
     public MobileSessionFactory() {
         this(PlatformProviders.defaults(), new DeviceProfileFactory());
     }
 
+    /**
+     * Creates a factory with explicit collaborators.
+     *
+     * @param providers      registry of platform providers
+     * @param profileFactory turns configuration into a device profile
+     */
     public MobileSessionFactory(PlatformProviders providers, DeviceProfileFactory profileFactory) {
         this.providers = Objects.requireNonNull(providers, "providers");
         this.profileFactory = Objects.requireNonNull(profileFactory, "profileFactory");
     }
 
+    /**
+     * Starts a session without a cloud session name.
+     *
+     * @param config configuration for one platform and environment
+     * @return the started session
+     */
     public MobileSession start(FrameworkConfig config) {
         return start(config, null);
     }
 
     /**
-     * @param sessionName nombre de la sesión en el dashboard del proveedor cloud (p. ej. la clase de prueba);
-     *                    opcional, solo se usa si el ambiente lo soporta
+     * Starts a session. If anything fails after the driver is created, the driver is quit before rethrowing.
+     *
+     * @param config      configuration for one platform and environment
+     * @param sessionName session name on the cloud provider's dashboard (for example the test class);
+     *                    optional, only used when the environment supports it
+     * @return the started session
      */
     public MobileSession start(FrameworkConfig config, String sessionName) {
         DeviceProfile profile = profileFactory.create(config, sessionName);
         PlatformProvider provider = providers.forPlatform(profile.platform());
         URL server = AppiumServerManager.serverUrl(config);
 
-        LOG.info("Abriendo sesión [{}] en el ambiente '{}' ({})", profile, config.environment(), server.getHost());
+        LOG.info("Opening session [{}] in the '{}' environment ({})", profile, config.environment(), server.getHost());
         AppiumDriver driver = provider.createDriver(server, profile);
         try {
             Waiter waiter = new Waiter(driver,

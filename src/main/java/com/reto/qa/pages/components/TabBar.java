@@ -8,7 +8,7 @@ import io.appium.java_client.pagefactory.iOSXCUITFindBy;
 import io.qameta.allure.Step;
 import org.openqa.selenium.WebElement;
 
-/** Barra inferior de navegación (componente reutilizable, composición sobre herencia). */
+/** Bottom navigation bar (a reusable component: composition over inheritance). */
 public final class TabBar extends BaseUiObject {
 
     @AndroidFindBy(accessibility = "Home")
@@ -23,16 +23,31 @@ public final class TabBar extends BaseUiObject {
     @iOSXCUITFindBy(accessibility = "Forms")
     private WebElement formsTab;
 
+    /**
+     * Creates the component for the session's platform.
+     *
+     * @param session the current session
+     */
     public TabBar(MobileSession session) {
         super(session);
     }
 
+    /**
+     * Waits until the tab bar is shown.
+     *
+     * @return this component
+     */
     public TabBar waitUntilVisible() {
         waiter.untilVisible(homeTab);
         return this;
     }
 
-    @Step("Abrir la pestaña {screen}")
+    /**
+     * Taps the tab of a screen.
+     *
+     * @param screen the screen to open
+     */
+    @Step("Open the {screen} tab")
     public void open(Screen screen) {
         tap(tabFor(screen));
     }

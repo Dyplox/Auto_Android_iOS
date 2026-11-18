@@ -3,24 +3,28 @@ package com.reto.qa.core;
 import org.openqa.selenium.WebElement;
 
 /**
- * Comportamientos que el sistema operativo resuelve de forma distinta (patrón Strategy).
+ * Behaviours that each operating system handles differently (Strategy pattern).
  *
- * <p>Es el ÚNICO punto del framework donde existe código específico de plataforma fuera de los locators:
- * los Page Objects y los tests dependen de esta abstracción (DIP) y nunca preguntan "¿estoy en iOS?".</p>
+ * <p>This is the ONLY place in the framework with platform-specific code outside the locators: Page Objects and tests
+ * depend on this abstraction (DIP) and never ask "am I on iOS?".</p>
  */
 public interface PlatformActions {
 
     /**
-     * Oculta el teclado si está visible.
+     * Hides the keyboard if it is visible.
      *
-     * @param neutralArea elemento sin interacción donde tocar si la plataforma no puede ocultarlo por API
-     *                    (limitación conocida de XCTest en iPhone)
+     * @param neutralArea non-interactive element to tap when the platform cannot hide the keyboard through the API
+     *                    (a known XCTest limitation on iPhone)
      */
     void hideKeyboard(WebElement neutralArea);
 
-    /** Abre un deep link dentro de la app bajo prueba. */
+    /**
+     * Opens a deep link inside the app under test.
+     *
+     * @param url full deep link, for example {@code wdio://login}
+     */
     void openDeepLink(String url);
 
-    /** Cierra y vuelve a abrir la app: estado limpio entre tests sin recrear la sesión. */
+    /** Closes and reopens the app: a clean state between tests without recreating the session. */
     void restartApp();
 }

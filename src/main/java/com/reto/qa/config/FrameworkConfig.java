@@ -30,26 +30,26 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Configuración inmutable por plataforma y ambiente.
+ * Immutable configuration for one platform and one environment.
  *
- * <p><b>Ambiente</b> ({@code local}, {@code ci}, {@code browserstack}, {@code saucelabs}…): se elige con la system
- * property {@code test.env} (en Gradle: {@code -Penv=…}), la variable {@code TEST_ENV} o el archivo {@code .env};
- * por defecto {@code local}.</p>
+ * <p><b>Environment</b> ({@code local}, {@code ci}, {@code browserstack}, {@code saucelabs}…): chosen with the
+ * {@code test.env} system property (in Gradle: {@code -Penv=…}), the {@code TEST_ENV} variable or the {@code .env}
+ * file; {@code local} by default.</p>
  *
- * <p><b>Precedencia</b> para una clave {@code k} en la plataforma {@code p} (gana la primera):</p>
+ * <p><b>Precedence</b> for a key {@code k} on platform {@code p} (the first match wins):</p>
  * <ol>
  *     <li>System property {@code p.k} (Gradle: {@code -Pios.device.name="iPhone 17"})</li>
  *     <li>System property {@code k}</li>
- *     <li>Variable de entorno {@code P_K} y luego {@code K} (también desde el archivo {@code .env})</li>
- *     <li>{@code config/env/<ambiente>-<plataforma>.properties}</li>
- *     <li>{@code config/env/<ambiente>.properties}</li>
- *     <li>{@code config/<plataforma>.properties}</li>
+ *     <li>Environment variable {@code P_K}, then {@code K} (also read from the {@code .env} file)</li>
+ *     <li>{@code config/env/<environment>-<platform>.properties}</li>
+ *     <li>{@code config/env/<environment>.properties}</li>
+ *     <li>{@code config/<platform>.properties}</li>
  *     <li>{@code config/framework.properties}</li>
  * </ol>
  *
- * <p><b>Secretos</b>: los valores admiten {@code ${VARIABLE}} y {@code ${VARIABLE:-por defecto}}, resueltos desde
- * system properties, variables de entorno o {@code .env}. Así las credenciales nunca se versionan. La resolución es
- * perezosa: una corrida local no exige credenciales de la nube.</p>
+ * <p><b>Secrets</b>: values support {@code ${VARIABLE}} and {@code ${VARIABLE:-default}}, resolved from system
+ * properties, environment variables or {@code .env}, so credentials are never committed. Resolution is lazy: a local
+ * run does not require cloud credentials.</p>
  */
 public final class FrameworkConfig {
 
@@ -63,7 +63,7 @@ public final class FrameworkConfig {
 
     private final Platform platform;
     private final String environment;
-    /** Archivos de configuración, del de mayor al de menor prioridad. */
+    /** Configuration files, from highest to lowest priority. */
     private final List<Properties> fileLayers;
     private final Map<String, String> environmentVariables;
     private final Properties systemProperties;
@@ -80,7 +80,14 @@ public final class FrameworkConfig {
         this.systemProperties = copyOf(systemProperties);
     }
 
-    /** Configuración real: classpath + {@code .env} + entorno + system properties. Se cachea por plataforma. */
+    /**
+     * Returns the real configuration: classpath files + {@code .env} + environment variables + system properties.
+     * The result is cached per platform.
+     *
+     * @param platform target platform
+     * @return the configuration for the active environment
+     * @throws ConfigurationException if the environment or a required file does not exist
+     */
     public static FrameworkConfig forPlatform(Platform platform) {
         return CACHE.computeIfAbsent(platform, p -> {
             Map<String, String> variables = new HashMap<>(loadDotEnv(Paths.get(System.getProperty("user.dir"), ".env")));
@@ -91,19 +98,35 @@ public final class FrameworkConfig {
         });
     }
 
-    /** Archivos de configuración del classpath para una plataforma y ambiente, de mayor a menor prioridad. */
+    /**
+     * Loads the classpath configuration files for a platform and environment.
+     *
+     * @param platform    target platform
+     * @param environment environment name
+     * @return the layers, from highest to lowest priority
+     * @throws ConfigurationException if the environment file or a required file is missing
+     */
     static List<Properties> loadLayers(Platform platform, String environment) {
         List<Properties> layers = new ArrayList<>();
         loadOptional("config/env/" + environment + "-" + platform.key() + ".properties").ifPresent(layers::add);
         layers.add(loadOptional("config/env/" + environment + ".properties").orElseThrow(() -> new ConfigurationException(
-                "No existe el ambiente '" + environment + "': falta src/test/resources/config/env/" + environment
-                        + ".properties. Ambientes incluidos: local, ci, browserstack, saucelabs")));
+                "Unknown environment '" + environment + "': src/test/resources/config/env/" + environment
+                        + ".properties is missing. Bundled environments: local, ci, browserstack, saucelabs")));
         layers.add(loadRequired("config/" + platform.key() + ".properties"));
         layers.add(loadRequired(COMMON_FILE));
         return layers;
     }
 
-    /** Fábrica pura (sin estado global) para pruebas unitarias; {@code fileLayers} va de mayor a menor prioridad. */
+    /**
+     * Pure factory (no global state) for unit tests.
+     *
+     * @param platform             target platform
+     * @param environment          environment name
+     * @param fileLayers           configuration files, from highest to lowest priority
+     * @param environmentVariables environment variables
+     * @param systemProperties     system properties
+     * @return the configuration
+     */
     static FrameworkConfig of(Platform platform,
                               String environment,
                               List<Properties> fileLayers,
@@ -112,7 +135,16 @@ public final class FrameworkConfig {
         return new FrameworkConfig(platform, environment, fileLayers, environmentVariables, systemProperties);
     }
 
-    /** Atajo para pruebas: solo archivo común y de plataforma, ambiente {@code local}. */
+    /**
+     * Test shortcut: only the common and platform files, in the {@code local} environment.
+     *
+     * @param platform             target platform
+     * @param common               contents of the common file
+     * @param platformSpecific     contents of the platform file
+     * @param environmentVariables environment variables
+     * @param systemProperties     system properties
+     * @return the configuration
+     */
     static FrameworkConfig of(Platform platform,
                               Properties common,
                               Properties platformSpecific,
@@ -121,15 +153,31 @@ public final class FrameworkConfig {
         return of(platform, DEFAULT_ENVIRONMENT, List.of(platformSpecific, common), environmentVariables, systemProperties);
     }
 
+    /**
+     * Returns the platform this configuration belongs to.
+     *
+     * @return the platform
+     */
     public Platform platform() {
         return platform;
     }
 
-    /** Nombre del ambiente activo (local, ci, browserstack, saucelabs…). */
+    /**
+     * Returns the name of the active environment (local, ci, browserstack, saucelabs…).
+     *
+     * @return the environment name
+     */
     public String environment() {
         return environment;
     }
 
+    /**
+     * Looks up a key using the precedence described in the class Javadoc and resolves its placeholders.
+     *
+     * @param key property key, for example {@code device.name}
+     * @return the trimmed value, or empty when no layer defines it
+     * @throws ConfigurationException if a placeholder refers to an undefined variable
+     */
     public Optional<String> find(String key) {
         String platformKey = platform.key() + "." + key;
         Stream<String> overrides = Stream.of(
@@ -145,50 +193,95 @@ public final class FrameworkConfig {
                 .map(value -> interpolate(key, value));
     }
 
+    /**
+     * Returns a required value.
+     *
+     * @param key property key
+     * @return the value
+     * @throws ConfigurationException if the key is not defined
+     */
     public String get(String key) {
         return find(key).orElseThrow(() -> new ConfigurationException(
-                "Falta la propiedad obligatoria '" + key + "' para " + platform.w3cName() + " en el ambiente '"
-                        + environment + "'. Defínela en config/" + platform.key() + ".properties, en config/env/"
-                        + environment + ".properties o con -P" + key + "=..."));
+                "Missing required property '" + key + "' for " + platform.w3cName() + " in the '"
+                        + environment + "' environment. Define it in config/" + platform.key() + ".properties, in config/env/"
+                        + environment + ".properties or with -P" + key + "=..."));
     }
 
+    /**
+     * Returns a required integer value.
+     *
+     * @param key property key
+     * @return the parsed integer
+     * @throws ConfigurationException if the key is missing or not an integer
+     */
     public int getInt(String key) {
         String value = get(key);
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new ConfigurationException("'" + key + "' debe ser un entero y es '" + value + "'", e);
+            throw new ConfigurationException("'" + key + "' must be an integer but is '" + value + "'", e);
         }
     }
 
+    /**
+     * Returns a required boolean value ({@code true} or {@code false}, case-insensitive).
+     *
+     * @param key property key
+     * @return the parsed boolean
+     * @throws ConfigurationException if the key is missing or not a boolean
+     */
     public boolean getBoolean(String key) {
         String value = get(key).toLowerCase(Locale.ROOT);
         if (!value.equals("true") && !value.equals("false")) {
-            throw new ConfigurationException("'" + key + "' debe ser true o false y es '" + value + "'");
+            throw new ConfigurationException("'" + key + "' must be true or false but is '" + value + "'");
         }
         return Boolean.parseBoolean(value);
     }
 
+    /**
+     * Returns a required duration expressed in seconds.
+     *
+     * @param key property key
+     * @return the duration
+     * @throws ConfigurationException if the key is missing or not an integer
+     */
     public Duration getSeconds(String key) {
         return Duration.ofSeconds(getInt(key));
     }
 
+    /**
+     * Returns a required duration expressed in milliseconds.
+     *
+     * @param key property key
+     * @return the duration
+     * @throws ConfigurationException if the key is missing or not an integer
+     */
     public Duration getMillis(String key) {
         return Duration.ofMillis(getInt(key));
     }
 
+    /**
+     * Returns a required URL value.
+     *
+     * @param key property key
+     * @return the parsed URL
+     * @throws ConfigurationException if the key is missing or not a valid URL
+     */
     public URL getUrl(String key) {
         String value = get(key);
         try {
             return new URI(value).toURL();
         } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
-            throw new ConfigurationException("'" + key + "' no es una URL válida: '" + value + "'", e);
+            throw new ConfigurationException("'" + key + "' is not a valid URL: '" + value + "'", e);
         }
     }
 
     /**
-     * Devuelve todas las claves que empiezan por {@code prefix} (sin el prefijo), resueltas con la misma
-     * precedencia que {@link #find(String)}. Útil para capabilities adicionales declaradas en archivos.
+     * Returns every key that starts with {@code prefix} (with the prefix removed), resolved with the same precedence
+     * as {@link #find(String)}. Useful for additional capabilities declared in files.
+     *
+     * @param prefix key prefix, for example {@code capability.}
+     * @return a sorted map of key (without prefix) to value
      */
     public Map<String, String> withPrefix(String prefix) {
         Map<String, String> result = new TreeMap<>();
@@ -204,6 +297,13 @@ public final class FrameworkConfig {
 
     // ---------------------------------------------------------------------------------------------------------------
 
+    /**
+     * Resolves the active environment: {@code test.env} system property, then {@code TEST_ENV}, then {@code local}.
+     *
+     * @param systemProperties     system properties
+     * @param environmentVariables environment variables (including {@code .env})
+     * @return the lower-case environment name
+     */
     static String resolveEnvironment(Properties systemProperties, Map<String, String> environmentVariables) {
         return Stream.of(systemProperties.getProperty(ENVIRONMENT_PROPERTY), environmentVariables.get(ENVIRONMENT_VARIABLE))
                 .filter(FrameworkConfig::hasText)
@@ -212,7 +312,7 @@ public final class FrameworkConfig {
                 .orElse(DEFAULT_ENVIRONMENT);
     }
 
-    /** Sustituye {@code ${NOMBRE}} y {@code ${NOMBRE:-defecto}}; si falta la variable, falla indicando cuál es. */
+    /** Replaces {@code ${NAME}} and {@code ${NAME:-default}}; if a variable is missing, fails naming it. */
     private String interpolate(String key, String value) {
         Matcher matcher = PLACEHOLDER.matcher(value);
         StringBuilder result = new StringBuilder();
@@ -223,8 +323,8 @@ public final class FrameworkConfig {
             String fallback = matcher.group(2);
             String resolved = hasText(fromSystem) ? fromSystem : hasText(fromEnvironment) ? fromEnvironment : fallback;
             if (resolved == null) {
-                throw new ConfigurationException("'" + key + "' necesita la variable " + name + " (ambiente '"
-                        + environment + "'). Defínela como variable de entorno o en el archivo .env");
+                throw new ConfigurationException("'" + key + "' needs the variable " + name + " ('"
+                        + environment + "' environment). Define it as an environment variable or in the .env file");
             }
             matcher.appendReplacement(result, Matcher.quoteReplacement(resolved));
         }
@@ -232,11 +332,23 @@ public final class FrameworkConfig {
         return result.toString();
     }
 
+    /**
+     * Converts a property key to its environment variable name ({@code ios.device.name} becomes
+     * {@code IOS_DEVICE_NAME}).
+     *
+     * @param key property key
+     * @return the environment variable name
+     */
     static String toEnvironmentName(String key) {
         return key.toUpperCase(Locale.ROOT).replace('.', '_').replace('-', '_');
     }
 
-    /** Formato {@code .env}: {@code CLAVE=valor}, comentarios con {@code #}, {@code export} y comillas opcionales. */
+    /**
+     * Parses the {@code .env} format: {@code KEY=value}, {@code #} comments, optional {@code export} and quotes.
+     *
+     * @param content file contents
+     * @return the variables, in file order
+     */
     static Map<String, String> parseDotEnv(String content) {
         Map<String, String> variables = new LinkedHashMap<>();
         for (String rawLine : content.split("\\R")) {
@@ -257,6 +369,12 @@ public final class FrameworkConfig {
         return variables;
     }
 
+    /**
+     * Reads a {@code .env} file if it exists.
+     *
+     * @param file path of the file
+     * @return the variables, or an empty map when the file does not exist
+     */
     static Map<String, String> loadDotEnv(Path file) {
         if (!Files.isRegularFile(file)) {
             return Map.of();
@@ -264,7 +382,7 @@ public final class FrameworkConfig {
         try {
             return parseDotEnv(Files.readString(file, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo leer " + file, e);
+            throw new UncheckedIOException("Could not read " + file, e);
         }
     }
 
@@ -274,7 +392,7 @@ public final class FrameworkConfig {
 
     private static Properties loadRequired(String resource) {
         return loadOptional(resource)
-                .orElseThrow(() -> new ConfigurationException("No se encontró '" + resource + "' en el classpath"));
+                .orElseThrow(() -> new ConfigurationException("'" + resource + "' was not found on the classpath"));
     }
 
     private static Optional<Properties> loadOptional(String resource) {
@@ -289,7 +407,7 @@ public final class FrameworkConfig {
             }
             return Optional.of(properties);
         } catch (IOException e) {
-            throw new ConfigurationException("No se pudo leer '" + resource + "'", e);
+            throw new ConfigurationException("Could not read '" + resource + "'", e);
         }
     }
 

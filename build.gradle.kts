@@ -6,10 +6,10 @@ plugins {
 
 group = "com.reto.qa"
 version = "1.0.0-SNAPSHOT"
-description = "Un solo set de pruebas para Android e iOS: lo único que cambia por plataforma son los locators."
+description = "One test suite for Android and iOS: the only thing that changes per platform is the locators."
 
 // ---------------------------------------------------------------------------------------------
-// Dependencias (versiones en gradle/libs.versions.toml)
+// Dependencies (versions in gradle/libs.versions.toml)
 // ---------------------------------------------------------------------------------------------
 val aspectjAgent = configurations.dependencyScope("aspectjAgent")
 val aspectjAgentClasspath = configurations.resolvable("aspectjAgentClasspath") {
@@ -17,14 +17,14 @@ val aspectjAgentClasspath = configurations.resolvable("aspectjAgentClasspath") {
 }
 
 dependencies {
-    // Núcleo del framework (src/main)
+    // Framework core (src/main)
     implementation(libs.appium.java.client)
     implementation(libs.selenium.api)
     implementation(libs.slf4j.api)
     implementation(platform(libs.allure.bom))
     implementation(libs.allure.java.commons)
 
-    // Pruebas (src/test)
+    // Tests (src/test)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
@@ -32,21 +32,28 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.logback.classic)
 
-    // -javaagent para que Allure registre los @Step de los Page Objects
+    // -javaagent so Allure records the @Step methods of the Page Objects
     "aspectjAgent"(libs.aspectj.weaver)
 }
 
 // ---------------------------------------------------------------------------------------------
-// Compilación: bytecode y API de Java 17 con cualquier JDK 17+ (el mínimo que exige Gradle 9)
+// Java toolchain: compilation, tests and Javadoc run on JDK 27, whatever JDK runs Gradle itself
+// (Gradle 9.8+ supports Java 27). If JDK 27 is not installed, the Foojay plugin in settings.gradle.kts
+// downloads it.
 // ---------------------------------------------------------------------------------------------
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(27)
+    }
+}
+
 tasks.withType<JavaCompile>().configureEach {
-    options.release = 17
     options.encoding = "UTF-8"
     options.compilerArgs.addAll(listOf("-Xlint:all,-processing,-serial", "-parameters"))
 }
 
 // ---------------------------------------------------------------------------------------------
-// Pruebas
+// Tests
 // ---------------------------------------------------------------------------------------------
 tasks.withType<Test>().configureEach {
     val agent: FileCollection = aspectjAgentClasspath.get()
@@ -57,9 +64,9 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-/** ./gradlew test (y check/build): pruebas unitarias del framework, sin Appium ni dispositivos. */
+/** ./gradlew test (and check/build): framework unit tests, with no Appium or devices. */
 tasks.test {
-    description = "Pruebas unitarias del framework (no requieren Appium ni dispositivos)."
+    description = "Framework unit tests (no Appium or devices required)."
     useJUnitPlatform {
         excludeTags("e2e")
     }
@@ -67,12 +74,12 @@ tasks.test {
 }
 
 val cleanAllureResults = tasks.register<Delete>("cleanAllureResults") {
-    description = "Borra los resultados de Allure de la ejecución E2E anterior."
+    description = "Deletes the Allure results of the previous E2E run."
     delete(layout.buildDirectory.dir("allure-results"))
 }
 
 /**
- * Propiedades del framework que se pueden sobrescribir desde la línea de comandos y llegan a la JVM de pruebas:
+ * Framework properties that can be overridden from the command line and are passed to the test JVM:
  * ./gradlew e2eIos -Penv=saucelabs -Pios.device.name="iPhone 17 Simulator" -Ptags=smoke
  */
 val frameworkPropertyPrefixes = listOf(
@@ -80,14 +87,14 @@ val frameworkPropertyPrefixes = listOf(
     "android.", "ios."
 )
 val tagExpression = providers.gradleProperty("tags")
-/** Ambiente de ejecución (local, ci, browserstack, saucelabs). Sin -Penv se usa TEST_ENV, .env o "local". */
+/** Execution environment (local, ci, browserstack, saucelabs). Without -Penv, TEST_ENV, .env or "local" is used. */
 val testEnvironment = providers.gradleProperty("env")
 
-/** Una tarea E2E por plataforma: mismo código y mismas clases de prueba, cada una en su propia JVM. */
+/** One E2E task per platform: same code and same test classes, each in its own JVM. */
 val e2eTasks = listOf("android", "ios").map { platform ->
     tasks.register<Test>("e2e${platform.replaceFirstChar(Char::titlecase)}") {
         group = LifecycleBasePlugin.VERIFICATION_GROUP
-        description = "Pruebas E2E en $platform (requieren Appium y un emulador/simulador)."
+        description = "E2E tests on $platform (require Appium and an emulator/simulator)."
         testClassesDirs = sourceSets.test.get().output.classesDirs
         classpath = sourceSets.test.get().runtimeClasspath
         useJUnitPlatform {
@@ -95,14 +102,14 @@ val e2eTasks = listOf("android", "ios").map { platform ->
         }
         systemProperty("platform", platform)
         testEnvironment.orNull?.let { systemProperty("test.env", it) }
-        // Un solo dispositivo por plataforma: los tests de una JVM corren en secuencia.
+        // One device per platform: the tests in a JVM run sequentially.
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
         frameworkPropertyPrefixes.forEach { prefix ->
             systemProperties(providers.gradlePropertiesPrefixedBy(prefix).get())
         }
         dependsOn(cleanAllureResults)
         shouldRunAfter(tasks.test)
-        // Una prueba E2E depende de un sistema externo: nunca se da por "al día" ni se reutiliza de la caché.
+        // An E2E test depends on an external system: it is never "up to date" and never reused from the cache.
         outputs.upToDateWhen { false }
         outputs.cacheIf { false }
     }
@@ -110,6 +117,6 @@ val e2eTasks = listOf("android", "ios").map { platform ->
 
 tasks.register("e2e") {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = "Pruebas E2E en Android e iOS en paralelo (configuration cache)."
+    description = "E2E tests on Android and iOS in parallel (configuration cache)."
     dependsOn(e2eTasks)
 }

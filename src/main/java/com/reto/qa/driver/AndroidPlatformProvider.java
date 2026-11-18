@@ -11,14 +11,20 @@ import io.appium.java_client.android.options.UiAutomator2Options;
 
 import java.net.URL;
 
+/** {@link PlatformProvider} for Android: UiAutomator2 capabilities, {@link AndroidDriver} and Android actions. */
 public final class AndroidPlatformProvider implements PlatformProvider {
+
+    /** Creates the Android provider. */
+    public AndroidPlatformProvider() {
+        // Stateless.
+    }
 
     @Override
     public Platform platform() {
         return Platform.ANDROID;
     }
 
-    /** Builder tipado de Appium: platformName=Android y automationName=UiAutomator2 vienen por defecto. */
+    /** Uses Appium's typed builder: {@code platformName=Android} and {@code automationName=UiAutomator2} are preset. */
     @Override
     public UiAutomator2Options capabilities(DeviceProfile profile) {
         requireSamePlatform(profile);
@@ -42,7 +48,7 @@ public final class AndroidPlatformProvider implements PlatformProvider {
     @Override
     public PlatformActions createActions(AppiumDriver driver, DeviceProfile profile, Waiter waiter) {
         if (!(driver instanceof AndroidDriver androidDriver)) {
-            throw new IllegalArgumentException("Se esperaba AndroidDriver y llegó " + driver.getClass().getName());
+            throw new IllegalArgumentException("Expected an AndroidDriver but got " + driver.getClass().getName());
         }
         return new AndroidPlatformActions(androidDriver, profile.appId());
     }

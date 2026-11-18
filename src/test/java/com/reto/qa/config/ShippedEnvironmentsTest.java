@@ -20,9 +20,9 @@ import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Valida los archivos de configuración que se entregan (src/test/resources/config): cada combinación
- * ambiente × plataforma debe producir capabilities completas. Detecta un .properties roto antes de pagar una
- * sesión en un dispositivo o en la nube.
+ * Validates the configuration files shipped in src/test/resources/config: every environment × platform combination
+ * must produce complete capabilities. It catches a broken .properties file before paying for a session on a device or
+ * in the cloud.
  */
 class ShippedEnvironmentsTest {
 
@@ -97,7 +97,7 @@ class ShippedEnvironmentsTest {
         Capabilities capabilities = capabilitiesFor(platform, "saucelabs");
 
         assertThat(capabilities.getCapability("appium:app")).isEqualTo(app);
-        assertThat(capabilities.getCapability("appium:udid")).as("en la nube no se elige simulador local").isNull();
+        assertThat(capabilities.getCapability("appium:udid")).as("no local simulator is picked in the cloud").isNull();
         assertThat(capabilities.getCapability("sauce:options")).asInstanceOf(MAP)
                 .containsEntry("username", "sauce-user")
                 .containsEntry("accessKey", "sauce-key")

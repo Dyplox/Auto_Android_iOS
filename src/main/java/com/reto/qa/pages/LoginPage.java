@@ -8,11 +8,11 @@ import io.qameta.allure.Step;
 import org.openqa.selenium.WebElement;
 
 /**
- * Pantalla Login / Sign up.
+ * The Login / Sign up screen.
  *
- * <p>Los campos con el mismo accessibility id en ambas plataformas se declaran igual dos veces a propósito:
- * el locator de cada SO queda explícito y puede cambiar sin tocar la lógica. Los mensajes de validación
- * muestran el caso en que el locator sí difiere (UiSelector vs. NSPredicate).</p>
+ * <p>Fields that share the same accessibility id on both platforms are declared twice on purpose: each OS locator
+ * stays explicit and can change without touching the logic. The validation messages show the case where the locator
+ * does differ (UiSelector vs. NSPredicate).</p>
  */
 public final class LoginPage extends BasePage {
 
@@ -59,6 +59,11 @@ public final class LoginPage extends BasePage {
     @iOSXCUITFindBy(iOSNsPredicate = "label == '" + SHORT_PASSWORD_MESSAGE + "'")
     private WebElement shortPasswordError;
 
+    /**
+     * Creates the page for the session's platform.
+     *
+     * @param session the current session
+     */
     public LoginPage(MobileSession session) {
         super(session);
     }
@@ -68,7 +73,12 @@ public final class LoginPage extends BasePage {
         return screen;
     }
 
-    @Step("Iniciar sesión con {credentials}")
+    /**
+     * Opens the Login tab, fills in the form and submits it.
+     *
+     * @param credentials email and password
+     */
+    @Step("Log in with {credentials}")
     public void loginWith(UserCredentials credentials) {
         tap(loginTab);
         type(emailInput, credentials.email());
@@ -76,7 +86,12 @@ public final class LoginPage extends BasePage {
         submit(loginButton);
     }
 
-    @Step("Registrarse con {credentials}")
+    /**
+     * Opens the Sign up tab, fills in the form and submits it.
+     *
+     * @param credentials email, password and password confirmation
+     */
+    @Step("Sign up with {credentials}")
     public void signUpWith(UserCredentials credentials) {
         tap(signUpTab);
         type(emailInput, credentials.email());
@@ -85,6 +100,12 @@ public final class LoginPage extends BasePage {
         submit(signUpButton);
     }
 
+    /**
+     * Checks whether a validation error appears, waiting up to the default timeout.
+     *
+     * @param error the expected error
+     * @return {@code true} if the error is displayed
+     */
     public boolean isValidationErrorDisplayed(LoginValidationError error) {
         return isVisible(errorElement(error), waiter.defaultTimeout());
     }

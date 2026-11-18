@@ -9,13 +9,13 @@ import io.qameta.allure.Step;
 import org.openqa.selenium.WebElement;
 
 /**
- * Alerta nativa del sistema operativo. Aquí SÍ difieren los locators entre plataformas
- * (resource-id / UiSelector en Android vs. NSPredicate / accessibility id en iOS),
- * pero la API del componente y los tests que la usan son idénticos.
+ * Native OS alert. Here the locators DO differ between platforms
+ * (resource-id / UiSelector on Android vs. NSPredicate / accessibility id on iOS),
+ * but the component's API and the tests that use it are identical.
  */
 public final class NativeAlert extends BaseUiObject {
 
-    /** En iOS el "label" del propio XCUIElementTypeAlert es el título. */
+    /** On iOS, the "label" of the XCUIElementTypeAlert itself is the title. */
     @AndroidFindBy(id = "com.wdiodemoapp:id/alert_title")
     @iOSXCUITFindBy(iOSNsPredicate = "type == 'XCUIElementTypeAlert'")
     private WebElement title;
@@ -24,24 +24,45 @@ public final class NativeAlert extends BaseUiObject {
     @iOSXCUITFindBy(accessibility = "OK")
     private WebElement okButton;
 
+    /**
+     * Creates the component for the session's platform.
+     *
+     * @param session the current session
+     */
     public NativeAlert(MobileSession session) {
         super(session);
     }
 
+    /**
+     * Waits until the alert is shown.
+     *
+     * @return this component
+     */
     public NativeAlert waitUntilVisible() {
         waiter.untilVisible(title);
         return this;
     }
 
+    /**
+     * Returns the alert title.
+     *
+     * @return the title
+     */
     public String title() {
         return textOf(title);
     }
 
+    /**
+     * Checks, without waiting, whether the alert is shown.
+     *
+     * @return {@code true} if the alert is displayed right now
+     */
     public boolean isDisplayed() {
         return Waiter.isDisplayedNow(title);
     }
 
-    @Step("Aceptar la alerta nativa (OK)")
+    /** Taps OK and waits until the alert is gone. */
+    @Step("Accept the native alert (OK)")
     public void accept() {
         tap(okButton);
         waiter.untilGone(title);

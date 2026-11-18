@@ -5,11 +5,16 @@ import com.reto.qa.pages.components.TabBar;
 
 import java.util.Objects;
 
-/** Navega como un usuario real: tocando la barra de pestañas. */
+/** Navigates like a real user: by tapping the tab bar. */
 public final class TabBarNavigator implements Navigator {
 
     private final MobileSession session;
 
+    /**
+     * Creates the navigator.
+     *
+     * @param session the current session
+     */
     public TabBarNavigator(MobileSession session) {
         this.session = Objects.requireNonNull(session, "session");
     }

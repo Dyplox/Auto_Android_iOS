@@ -1,7 +1,7 @@
 {
   "name": "mobile-cross-platform-automation-toolchain",
   "private": true,
-  "description": "Versiones fijadas de Appium, sus drivers y Allure: todo el equipo y CI usan exactamente lo mismo (npm ci).",
+  "description": "Pinned versions of Appium, its drivers and Allure: the whole team and CI use exactly the same ones (npm ci).",
   "engines": {
     "node": ">=22.22.2"
   },

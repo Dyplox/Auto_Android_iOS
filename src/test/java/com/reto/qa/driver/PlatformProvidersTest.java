@@ -13,8 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Verifica, sin dispositivo ni servidor, que un mismo {@link DeviceProfile} se traduce a las capabilities
- * correctas de cada plataforma.
+ * Verifies, without a device or a server, that the same {@link DeviceProfile} is turned into the right capabilities
+ * for each platform.
  */
 class PlatformProvidersTest {
 

@@ -11,8 +11,15 @@ import io.appium.java_client.AppiumDriver;
 import java.util.Objects;
 
 /**
- * Todo lo que un Page Object necesita de una sesión, inyectado por constructor (DIP):
- * los pages no conocen singletons, ThreadLocals ni configuración global.
+ * Everything a Page Object needs from a session, injected through the constructor (DIP):
+ * pages know nothing about singletons, ThreadLocals or global configuration.
+ *
+ * @param driver   the Appium driver
+ * @param profile  the device and app under test
+ * @param config   the configuration the session was created from
+ * @param waiter   explicit waits bound to this driver
+ * @param gestures W3C gestures bound to this driver
+ * @param actions  platform-specific actions (Strategy)
  */
 public record MobileSession(AppiumDriver driver,
                             DeviceProfile profile,
@@ -21,6 +28,17 @@ public record MobileSession(AppiumDriver driver,
                             Gestures gestures,
                             PlatformActions actions) implements AutoCloseable {
 
+    /**
+     * Validates that no component is missing.
+     *
+     * @param driver   the Appium driver
+     * @param profile  the device and app under test
+     * @param config   the configuration the session was created from
+     * @param waiter   explicit waits bound to this driver
+     * @param gestures W3C gestures bound to this driver
+     * @param actions  platform-specific actions (Strategy)
+     * @throws NullPointerException if any component is {@code null}
+     */
     public MobileSession {
         Objects.requireNonNull(driver, "driver");
         Objects.requireNonNull(profile, "profile");
@@ -30,10 +48,16 @@ public record MobileSession(AppiumDriver driver,
         Objects.requireNonNull(actions, "actions");
     }
 
+    /**
+     * Returns the platform of this session.
+     *
+     * @return the platform
+     */
     public Platform platform() {
         return profile.platform();
     }
 
+    /** Ends the Appium session. */
     @Override
     public void close() {
         driver.quit();

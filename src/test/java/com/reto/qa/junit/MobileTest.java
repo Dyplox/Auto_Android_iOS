@@ -10,13 +10,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marca una clase como prueba E2E móvil. Composición en lugar de herencia: no hay clase base.
+ * Marks a class as a mobile E2E test. Composition instead of inheritance: there is no base class.
  *
  * <ul>
- *     <li>{@link AppiumSessionExtension}: abre una sesión por clase, reinicia la app antes de cada test
- *     e inyecta {@code WdioDemoApp} / {@code MobileSession} como parámetros.</li>
- *     <li>{@link EvidenceExtension}: adjunta screenshot y page source a Allure cuando un test falla.</li>
- *     <li>{@code @Tag("e2e")}: {@code ./gradlew test} la excluye; las tareas {@code e2eAndroid} / {@code e2eIos} la incluyen.</li>
+ *     <li>{@link AppiumSessionExtension}: opens one session per class, restarts the app before each test
+ *     and injects {@code WdioDemoApp} / {@code MobileSession} as parameters.</li>
+ *     <li>{@link EvidenceExtension}: attaches a screenshot and the page source to Allure when a test fails.</li>
+ *     <li>{@code @Tag("e2e")}: {@code ./gradlew test} excludes it; the {@code e2eAndroid} / {@code e2eIos} tasks include it.</li>
  * </ul>
  */
 @Target(ElementType.TYPE)

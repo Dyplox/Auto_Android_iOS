@@ -17,29 +17,30 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** E2E tests for signing up. */
 @MobileTest
-@Epic("Autenticación")
-@Feature("Registro")
-@DisplayName("Registro")
+@Epic("Authentication")
+@Feature("Sign up")
+@DisplayName("Sign up")
 class SignUpTest {
 
     @Test
     @Tag("smoke")
     @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Datos válidos muestran la alerta de confirmación")
+    @DisplayName("Valid data shows the confirmation alert")
     void shouldSignUpWithValidData(WdioDemoApp app) {
         LoginPage loginPage = app.open(Screen.LOGIN, LoginPage::new);
 
         loginPage.signUpWith(CredentialsMother.valid());
 
         NativeAlert alert = app.alert().waitUntilVisible();
-        assertThat(alert.title()).as("Título de la alerta de registro").contains("Signed Up");
+        assertThat(alert.title()).as("Sign-up alert title").contains("Signed Up");
         alert.accept();
     }
 
     @Test
     @Severity(SeverityLevel.NORMAL)
-    @DisplayName("Una contraseña corta muestra el error de longitud")
+    @DisplayName("A short password shows the length error")
     void shouldRejectShortPasswordOnSignUp(WdioDemoApp app) {
         LoginPage loginPage = app.open(Screen.LOGIN, LoginPage::new);
 

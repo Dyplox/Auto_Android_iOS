@@ -8,8 +8,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Objeto de valor inmutable que describe el dispositivo y la app bajo prueba.
- * Se construye exclusivamente con {@link Builder} (patrón Builder) y valida sus invariantes al construirse.
+ * Immutable value object that describes the device and the app under test.
+ * It can only be created through its {@link Builder} (Builder pattern), which validates the invariants.
  */
 public final class DeviceProfile {
 
@@ -38,47 +38,93 @@ public final class DeviceProfile {
         this.extraCapabilities = Collections.unmodifiableMap(capabilities);
     }
 
+    /**
+     * Starts building a profile.
+     *
+     * @param platform target platform
+     * @return a new builder
+     */
     public static Builder builder(Platform platform) {
         return new Builder(platform);
     }
 
+    /**
+     * Returns the target platform.
+     *
+     * @return the platform
+     */
     public Platform platform() {
         return platform;
     }
 
+    /**
+     * Returns the device name (emulator, simulator or cloud device).
+     *
+     * @return the device name
+     */
     public String deviceName() {
         return deviceName;
     }
 
+    /**
+     * Returns the OS version, if one was configured.
+     *
+     * @return the platform version, or empty
+     */
     public Optional<String> platformVersion() {
         return Optional.ofNullable(platformVersion);
     }
 
+    /**
+     * Returns the device UDID, if one was configured or auto-selected.
+     *
+     * @return the UDID, or empty
+     */
     public Optional<String> udid() {
         return Optional.ofNullable(udid);
     }
 
-    /** Ruta absoluta o URL de la app (.apk / .app.zip / .ipa). Vacío si la app ya está instalada. */
+    /**
+     * Returns the absolute path or remote reference of the app (.apk / .app.zip / .ipa / URL / cloud id).
+     *
+     * @return the app, or empty when the app is already installed
+     */
     public Optional<String> app() {
         return Optional.ofNullable(app);
     }
 
-    /** appPackage en Android, bundleId en iOS. */
+    /**
+     * Returns the app identifier: {@code appPackage} on Android, {@code bundleId} on iOS.
+     *
+     * @return the app identifier
+     */
     public String appId() {
         return appId;
     }
 
+    /**
+     * Returns how long Appium waits for a new command before ending the session.
+     *
+     * @return the new-command timeout
+     */
     public Duration newCommandTimeout() {
         return newCommandTimeout;
     }
 
+    /**
+     * Returns whether the app state is kept between sessions.
+     *
+     * @return the {@code noReset} flag
+     */
     public boolean noReset() {
         return noReset;
     }
 
     /**
-     * Capabilities adicionales ya con prefijo de vendor (p. ej. {@code appium:appWaitActivity}); las opciones de un
-     * proveedor cloud llegan agrupadas en un mapa (p. ej. {@code bstack:options} o {@code sauce:options}).
+     * Returns the additional capabilities, already vendor-prefixed (for example {@code appium:appWaitActivity}).
+     * Cloud provider options are grouped in a map (for example {@code bstack:options} or {@code sauce:options}).
+     *
+     * @return an unmodifiable map of capability name to value
      */
     public Map<String, Object> extraCapabilities() {
         return extraCapabilities;
@@ -92,6 +138,7 @@ public final class DeviceProfile {
                 + " | " + appId;
     }
 
+    /** Fluent builder for {@link DeviceProfile}. Blank values are treated as absent. */
     public static final class Builder {
 
         private static final Duration DEFAULT_NEW_COMMAND_TIMEOUT = Duration.ofSeconds(240);
@@ -111,45 +158,92 @@ public final class DeviceProfile {
             this.platform = Objects.requireNonNull(platform, "platform");
         }
 
+        /**
+         * Sets the device name (required).
+         *
+         * @param deviceName emulator, simulator or cloud device name
+         * @return this builder
+         */
         public Builder deviceName(String deviceName) {
             this.deviceName = blankToNull(deviceName);
             return this;
         }
 
+        /**
+         * Sets the OS version.
+         *
+         * @param platformVersion version such as {@code 16} or {@code 26.0}
+         * @return this builder
+         */
         public Builder platformVersion(String platformVersion) {
             this.platformVersion = blankToNull(platformVersion);
             return this;
         }
 
+        /**
+         * Sets the device UDID.
+         *
+         * @param udid device or simulator UDID
+         * @return this builder
+         */
         public Builder udid(String udid) {
             this.udid = blankToNull(udid);
             return this;
         }
 
+        /**
+         * Sets the app to install.
+         *
+         * @param app absolute path, URL or cloud reference
+         * @return this builder
+         */
         public Builder app(String app) {
             this.app = blankToNull(app);
             return this;
         }
 
+        /**
+         * Sets the app identifier (required).
+         *
+         * @param appId {@code appPackage} on Android, {@code bundleId} on iOS
+         * @return this builder
+         */
         public Builder appId(String appId) {
             this.appId = blankToNull(appId);
             return this;
         }
 
+        /**
+         * Sets the Appium new-command timeout (default 240 seconds).
+         *
+         * @param newCommandTimeout the timeout
+         * @return this builder
+         */
         public Builder newCommandTimeout(Duration newCommandTimeout) {
             this.newCommandTimeout = Objects.requireNonNull(newCommandTimeout, "newCommandTimeout");
             return this;
         }
 
+        /**
+         * Sets whether the app state is kept between sessions.
+         *
+         * @param noReset the {@code noReset} flag
+         * @return this builder
+         */
         public Builder noReset(boolean noReset) {
             this.noReset = noReset;
             return this;
         }
 
         /**
-         * Añade una capability. Sin prefijo de vendor se asume {@code appium:}. Con la forma
-         * {@code vendor:opciones.clave} (p. ej. {@code bstack:options.userName}) se agrupa en el mapa
-         * {@code vendor:opciones}, como exigen BrowserStack ({@code bstack:options}) o Sauce Labs ({@code sauce:options}).
+         * Adds a capability. Without a vendor prefix, {@code appium:} is assumed. A name of the form
+         * {@code vendor:options.key} (for example {@code bstack:options.userName}) is grouped into the
+         * {@code vendor:options} map, as BrowserStack ({@code bstack:options}) and Sauce Labs ({@code sauce:options})
+         * require.
+         *
+         * @param name  capability name
+         * @param value capability value
+         * @return this builder
          */
         public Builder capability(String name, Object value) {
             Objects.requireNonNull(name, "name");
@@ -165,20 +259,26 @@ public final class DeviceProfile {
             return this;
         }
 
+        /**
+         * Validates the invariants and builds the profile.
+         *
+         * @return the immutable profile
+         * @throws ConfigurationException if a required value is missing or the capabilities conflict
+         */
         public DeviceProfile build() {
             if (deviceName == null) {
-                throw new ConfigurationException("device.name es obligatorio para " + platform.w3cName());
+                throw new ConfigurationException("device.name is required for " + platform.w3cName());
             }
             if (appId == null) {
                 throw new ConfigurationException(
-                        "app.id es obligatorio (appPackage en Android / bundleId en iOS) para " + platform.w3cName());
+                        "app.id is required (appPackage on Android / bundleId on iOS) for " + platform.w3cName());
             }
             if (platform == Platform.IOS && udid == null && platformVersion == null) {
-                throw new ConfigurationException("En iOS define platform.version o device.udid para que XCUITest "
-                        + "pueda elegir el simulador. Lista los disponibles con: xcrun simctl list devices available");
+                throw new ConfigurationException("On iOS, set platform.version or device.udid so XCUITest "
+                        + "can pick the simulator. List the available ones with: xcrun simctl list devices available");
             }
             vendorOptions.keySet().stream().filter(extraCapabilities::containsKey).findFirst().ifPresent(vendor -> {
-                throw new ConfigurationException("'" + vendor + "' está definida como valor simple y como grupo de opciones");
+                throw new ConfigurationException("'" + vendor + "' is defined both as a single value and as an options group");
             });
             return new DeviceProfile(this);
         }
