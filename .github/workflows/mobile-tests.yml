@@ -1,0 +1,144 @@
+name: mobile-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Ejecución manual contra la nube: Actions > mobile-tests > Run workflow
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente cloud
+        type: choice
+        options: [saucelabs, browserstack]
+        default: saucelabs
+      platform:
+        description: Plataforma (BrowserStack solo Android con la app demo)
+        type: choice
+        options: [Android, Ios]
+        default: Android
+
+concurrency:
+  group: mobile-tests-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  # Rápido y sin dispositivos: compila y corre las pruebas unitarias del framework.
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      # Valida el gradle-wrapper.jar y cachea dependencias / configuration cache
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./gradlew build
+
+  # Ambiente "ci": emulador Android en el runner, Appium iniciado por el framework.
+  android-e2e:
+    if: github.event_name != 'workflow_dispatch'
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: ./scripts/download-apps.sh
+      - name: Habilitar KVM (emulador acelerado)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: E2E Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: ./gradlew e2eAndroid -Penv=ci
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-results
+          path: |
+            build/allure-results
+            build/screenshots
+            build/reports/tests
+            build/appium-server-*.log
+
+  # Ambiente "ci": simulador iOS en el runner de macOS.
+  ios-e2e:
+    if: github.event_name != 'workflow_dispatch'
+    needs: unit
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: ./scripts/download-apps.sh
+      # Sin device.udid / platform.version el framework elige el simulador más nuevo disponible.
+      - name: E2E iOS
+        run: ./gradlew e2eIos -Penv=ci
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-results
+          path: |
+            build/allure-results
+            build/screenshots
+            build/reports/tests
+            build/appium-server-*.log
+
+  # Ambientes "browserstack" / "saucelabs": credenciales como secrets del repositorio.
+  cloud-e2e:
+    if: github.event_name == 'workflow_dispatch'
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      BUILD_NAME: gh-${{ github.run_number }}
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+      SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+      SAUCE_REGION: ${{ vars.SAUCE_REGION || 'us-west-1' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - run: ./scripts/download-apps.sh
+      - run: ./scripts/upload-app.sh ${{ inputs.environment }}
+      - name: E2E ${{ inputs.platform }} en ${{ inputs.environment }}
+        run: ./gradlew e2e${{ inputs.platform }} -Penv=${{ inputs.environment }}
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloud-results-${{ inputs.environment }}-${{ inputs.platform }}
+          path: |
+            build/allure-results
+            build/screenshots
+            build/reports/tests

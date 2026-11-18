@@ -1,0 +1,26 @@
+[versions]
+appium-java-client = "11.0.0"
+# java-client 11.0.0 está certificado con Selenium 4.50.0 (matriz de compatibilidad oficial)
+selenium = "4.50.0"
+junit = "5.14.4"
+assertj = "3.27.7"
+allure = "3.1.1"
+aspectj = "1.9.26"
+slf4j = "2.0.20"
+logback = "1.5.38"
+
+[libraries]
+appium-java-client = { module = "io.appium:java-client", version.ref = "appium-java-client" }
+selenium-api = { module = "org.seleniumhq.selenium:selenium-api", version.ref = "selenium" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+allure-bom = { module = "io.qameta.allure:allure-bom", version.ref = "allure" }
+allure-java-commons = { module = "io.qameta.allure:allure-java-commons" }
+allure-jupiter = { module = "io.qameta.allure:allure-jupiter" }
+aspectj-weaver = { module = "org.aspectj:aspectjweaver", version.ref = "aspectj" }
+
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }

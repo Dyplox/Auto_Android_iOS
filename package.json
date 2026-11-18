@@ -1,0 +1,21 @@
+{
+  "name": "mobile-cross-platform-automation-toolchain",
+  "private": true,
+  "description": "Versiones fijadas de Appium, sus drivers y Allure: todo el equipo y CI usan exactamente lo mismo (npm ci).",
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "appium": "appium --address 127.0.0.1 --port 4723",
+    "doctor:android": "appium driver doctor uiautomator2",
+    "doctor:ios": "appium driver doctor xcuitest",
+    "drivers": "appium driver list --installed",
+    "report": "allure generate build/allure-results -o build/allure-report --clean --open"
+  },
+  "devDependencies": {
+    "allure": "3.33.0",
+    "appium": "4.0.0",
+    "appium-uiautomator2-driver": "9.2.2",
+    "appium-xcuitest-driver": "13.1.3"
+  }
+}

@@ -1,0 +1,61 @@
+# =============================================================================
+#  .gitignore - Automatización móvil Appium (Gradle + Node toolchain)
+# =============================================================================
+
+# --- Secretos y configuración local (NUNCA versionar) ------------------------
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+# (anclados a la raíz: src/test/resources/config/env/local.properties SÍ se versiona)
+/local.properties
+/secrets.properties
+
+# --- Gradle ------------------------------------------------------------------
+.gradle/
+build/
+.kotlin/
+# El jar del wrapper SÍ se versiona (aunque un .gitignore global excluya *.jar)
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Toolchain Node (Appium, drivers, Allure CLI) ------------------------------
+node_modules/
+npm-debug.log*
+
+# --- Resultados y evidencias de ejecución --------------------------------------
+allure-results/
+allure-report/
+.allure/
+screenshots/
+*.log
+
+# --- Binarios de la app bajo prueba (se descargan con scripts/download-apps.sh) --
+apps/*
+!apps/.gitkeep
+*.apk
+*.aab
+*.ipa
+
+# --- IDEs ----------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+
+# --- Archivos de la app de escritorio de Claude ------------------------------------
+Claude outputs/
+
+# --- Sistema operativo -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*~
