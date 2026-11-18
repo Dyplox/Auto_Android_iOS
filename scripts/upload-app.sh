@@ -32,6 +32,7 @@ if [[ -f "$ROOT_DIR/.env" ]]; then
 fi
 
 require() {
+  local name
   for name in "$@"; do
     if [[ -z "${!name:-}" ]]; then
       echo "Missing variable $name (define it in the environment or in .env)" >&2
@@ -41,8 +42,9 @@ require() {
 }
 
 require_file() {
-  if [[ ! -s "$1" ]]; then
-    echo "$1 does not exist. Run ./scripts/download-apps.sh $VERSION first" >&2
+  local file="$1"
+  if [[ ! -s "$file" ]]; then
+    echo "$file does not exist. Run ./scripts/download-apps.sh $VERSION first" >&2
     exit 1
   fi
 }

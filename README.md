@@ -354,13 +354,15 @@ To inspect locators, use [Appium Inspector](https://github.com/appium/appium-ins
 
 - **unit** (ubuntu): `./gradlew build` on every push/PR (static analysis, formatting, unit tests and coverage; the
   reports are uploaded as artifacts), then the SonarQube Cloud analysis and Quality Gate.
-- **android-e2e** (ubuntu + KVM emulator) and **ios-e2e** (macOS + simulator): `npm ci`, app download and
-  `./gradlew e2eAndroid|e2eIos -Penv=ci`. They publish Allure results, screenshots, the Gradle report and the Appium
-  log as artifacts.
-- **cloud-e2e** (manual: *Actions › mobile-tests › Run workflow*): pick the environment (`saucelabs` /
-  `browserstack`) and platform; it uploads the app and runs the suite in the cloud. Requires the repository secrets
-  `SAUCE_USERNAME`, `SAUCE_ACCESS_KEY`, `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY` (and the optional
-  `SAUCE_REGION` variable).
+- **E2E jobs are manual only** (*Actions › mobile-tests › Run workflow*, pick a `target`). They need an emulator, a
+  simulator or a cloud account, and they use many Actions minutes (on private repositories each macOS minute counts
+  10x), so pushes and PRs never run them:
+  - `android-emulator` → **android-e2e** (ubuntu + KVM emulator) and `ios-simulator` → **ios-e2e** (macOS +
+    simulator): `npm ci`, app download and `./gradlew e2eAndroid|e2eIos -Penv=ci`. They publish Allure results,
+    screenshots, the Gradle report and the Appium log as artifacts.
+  - `cloud` → **cloud-e2e**: pick the environment (`saucelabs` / `browserstack`) and platform; it uploads the app and
+    runs the suite in the cloud. Requires the repository secrets `SAUCE_USERNAME`, `SAUCE_ACCESS_KEY`,
+    `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY` (and the optional `SAUCE_REGION` variable).
 
 ## Javadoc
 

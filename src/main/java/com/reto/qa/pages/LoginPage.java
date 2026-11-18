@@ -17,7 +17,7 @@ import org.openqa.selenium.WebElement;
 public final class LoginPage extends BasePage {
 
     static final String INVALID_EMAIL_MESSAGE = "Please enter a valid email address";
-    static final String SHORT_PASSWORD_MESSAGE = "Please enter at least 8 characters";
+    static final String MIN_LENGTH_MESSAGE = "Please enter at least 8 characters";
 
     @AndroidFindBy(accessibility = "Login-screen")
     @iOSXCUITFindBy(accessibility = "Login-screen")
@@ -55,8 +55,8 @@ public final class LoginPage extends BasePage {
     @iOSXCUITFindBy(iOSNsPredicate = "label == '" + INVALID_EMAIL_MESSAGE + "'")
     private WebElement invalidEmailError;
 
-    @AndroidFindBy(uiAutomator = "new UiSelector().text(\"" + SHORT_PASSWORD_MESSAGE + "\")")
-    @iOSXCUITFindBy(iOSNsPredicate = "label == '" + SHORT_PASSWORD_MESSAGE + "'")
+    @AndroidFindBy(uiAutomator = "new UiSelector().text(\"" + MIN_LENGTH_MESSAGE + "\")")
+    @iOSXCUITFindBy(iOSNsPredicate = "label == '" + MIN_LENGTH_MESSAGE + "'")
     private WebElement shortPasswordError;
 
     /**
