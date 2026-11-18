@@ -21,7 +21,8 @@ for file in "android.wdio.native.app.v${VERSION}.apk" "ios.simulator.wdio.native
     continue
   fi
   echo "GET  $BASE_URL/$file"
-  curl -fL --retry 3 --progress-bar -o "$APPS_DIR/$file.part" "$BASE_URL/$file"
+  # HTTPS only, also on redirects (GitHub redirects release downloads to its asset host)
+  curl -fL --proto '=https' --proto-redir '=https' --retry 3 --progress-bar -o "$APPS_DIR/$file.part" "$BASE_URL/$file"
   mv "$APPS_DIR/$file.part" "$APPS_DIR/$file"
 done
 
