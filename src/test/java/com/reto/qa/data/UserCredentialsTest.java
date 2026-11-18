@@ -40,7 +40,9 @@ class UserCredentialsTest {
 
     @Test
     void emailAndPasswordAreMandatory() {
-        assertThatThrownBy(() -> UserCredentials.builder().password("x").build())
+        UserCredentials.Builder builder = UserCredentials.builder().password("x");
+
+        assertThatThrownBy(builder::build)
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("email");
     }

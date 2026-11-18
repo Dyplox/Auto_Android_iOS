@@ -55,7 +55,9 @@ class FrameworkSettingsTest {
 
     @Test
     void unknownNavigationStrategyListsTheValidOnes() {
-        assertThatThrownBy(() -> FrameworkSettings.from(config("navigation.strategy", "swipe")))
+        FrameworkConfig config = config("navigation.strategy", "swipe");
+
+        assertThatThrownBy(() -> FrameworkSettings.from(config))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("swipe")
                 .hasMessageContaining("tabbar, deeplink");
@@ -63,21 +65,27 @@ class FrameworkSettingsTest {
 
     @Test
     void deepLinkSchemeMustEndWithSeparator() {
-        assertThatThrownBy(() -> FrameworkSettings.from(config("app.deeplink.scheme", "wdio")))
+        FrameworkConfig config = config("app.deeplink.scheme", "wdio");
+
+        assertThatThrownBy(() -> FrameworkSettings.from(config))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("app.deeplink.scheme");
     }
 
     @Test
     void timeoutsMustBePositive() {
-        assertThatThrownBy(() -> FrameworkSettings.from(config("timeout.explicit.seconds", "0")))
+        FrameworkConfig config = config("timeout.explicit.seconds", "0");
+
+        assertThatThrownBy(() -> FrameworkSettings.from(config))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("timeout.explicit.seconds");
     }
 
     @Test
     void pollingMustBeShorterThanTheExplicitTimeout() {
-        assertThatThrownBy(() -> FrameworkSettings.from(config("timeout.polling.millis", "30000")))
+        FrameworkConfig config = config("timeout.polling.millis", "30000");
+
+        assertThatThrownBy(() -> FrameworkSettings.from(config))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("timeout.polling.millis");
     }
