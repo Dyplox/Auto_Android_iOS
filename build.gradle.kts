@@ -19,8 +19,8 @@ plugins {
     alias(libs.plugins.sonarqube)
 }
 
-// Lock every resolved dependency (gradle.lockfile) so builds are reproducible.
-// After changing a version: ./gradlew dependencies buildEnvironment --write-locks
+// Lock every resolved dependency (gradle.lockfile) so builds are reproducible, and verify each artifact against
+// its SHA-256 in gradle/verification-metadata.xml. After changing a version: ./scripts/update-dependencies.sh
 dependencyLocking {
     lockAllConfigurations()
 }

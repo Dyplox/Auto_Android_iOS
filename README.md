@@ -98,7 +98,7 @@ src/test/resources
 │   └── env/       local · ci (+ci-ios) · browserstack (+android/ios) · saucelabs (+android/ios)
 └── junit-platform.properties · allure.properties · logback-test.xml
 
-scripts/           download-apps.sh · upload-app.sh (BrowserStack / Sauce Labs)
+scripts/           download-apps.sh · upload-app.sh (BrowserStack / Sauce Labs) · update-dependencies.sh
 .env.example       credentials template; the real .env is not committed
 ```
 
@@ -328,6 +328,11 @@ One-time setup on sonarcloud.io:
 drivers) and GitHub Actions. Related libraries are grouped so they move together, for example java-client with
 Selenium (they must stay on the official compatibility matrix) and JUnit's modules. The `unit` CI job validates every
 pull request before it is merged.
+
+Gradle dependencies are locked (`*.lockfile`) and every artifact is checked against its SHA-256 in
+`gradle/verification-metadata.xml`, so a tampered download fails the build. Dependabot does not update those files: on
+each Gradle pull request, check out its branch, run `./scripts/update-dependencies.sh`, review the diff (new checksums
+should only appear for the versions being bumped) and push the result.
 
 ## Report
 
