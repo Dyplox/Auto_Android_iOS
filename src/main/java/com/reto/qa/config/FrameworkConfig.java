@@ -56,6 +56,7 @@ import java.util.stream.Stream;
 public final class FrameworkConfig {
 
     static final String COMMON_FILE = "config/framework.properties";
+    private static final String PROPERTIES_EXTENSION = ".properties";
     static final String ENVIRONMENT_PROPERTY = "test.env";
     static final String ENVIRONMENT_VARIABLE = "TEST_ENV";
     static final String DEFAULT_ENVIRONMENT = "local";
@@ -111,12 +112,14 @@ public final class FrameworkConfig {
      */
     static List<Properties> loadLayers(Platform platform, String environment) {
         List<Properties> layers = new ArrayList<>();
-        loadOptional("config/env/" + environment + "-" + platform.key() + ".properties").ifPresent(layers::add);
+        loadOptional("config/env/" + environment + "-" + platform.key() + PROPERTIES_EXTENSION).ifPresent(layers::add);
         layers.add(
-                loadOptional("config/env/" + environment + ".properties").orElseThrow(() -> new ConfigurationException(
-                        "Unknown environment '" + environment + "': src/test/resources/config/env/" + environment
-                                + ".properties is missing. Bundled environments: local, ci, browserstack, saucelabs")));
-        layers.add(loadRequired("config/" + platform.key() + ".properties"));
+                loadOptional("config/env/" + environment + PROPERTIES_EXTENSION)
+                        .orElseThrow(() -> new ConfigurationException(
+                                "Unknown environment '" + environment + "': src/test/resources/config/env/"
+                                        + environment
+                                        + ".properties is missing. Bundled environments: local, ci, browserstack, saucelabs")));
+        layers.add(loadRequired("config/" + platform.key() + PROPERTIES_EXTENSION));
         layers.add(loadRequired(COMMON_FILE));
         return layers;
     }
@@ -328,7 +331,12 @@ public final class FrameworkConfig {
             @Nullable String fromSystem = systemProperties.getProperty(name);
             @Nullable String fromEnvironment = environmentVariables.get(name);
             @Nullable String fallback = matcher.group(2);
-            @Nullable String resolved = hasText(fromSystem) ? fromSystem : hasText(fromEnvironment) ? fromEnvironment : fallback;
+            @Nullable String resolved = fallback;
+            if (hasText(fromSystem)) {
+                resolved = fromSystem;
+            } else if (hasText(fromEnvironment)) {
+                resolved = fromEnvironment;
+            }
             if (resolved == null) {
                 throw new ConfigurationException("'" + key + "' needs the variable " + name + " ('"
                         + environment + "' environment). Define it as an environment variable or in the .env file");

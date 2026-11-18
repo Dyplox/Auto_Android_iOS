@@ -25,7 +25,7 @@ public final class IosSimulatorLocator {
     private static final Pattern VERSION_SEPARATOR = Pattern.compile("\\.");
     private static final Pattern RUNTIME_HEADER = Pattern.compile("^-- iOS ([0-9.]+) --$");
     private static final Pattern DEVICE_LINE = Pattern
-            .compile("^\\s+(.+) \\(([0-9A-Fa-f-]{36})\\) \\(([A-Za-z ]+)\\)\\s*$");
+            .compile("^\\s++(\\S.*) \\(([0-9A-Fa-f-]{36})\\) \\(([A-Za-z ]+)\\)\\s*$");
 
     private final Supplier<Optional<String>> simctlOutput;
 
@@ -121,7 +121,7 @@ public final class IosSimulatorLocator {
             return Optional.empty();
         }
         try {
-            Process process = new ProcessBuilder("xcrun", "simctl", "list", "devices", "available")
+            Process process = new ProcessBuilder("/usr/bin/xcrun", "simctl", "list", "devices", "available")
                     .redirectErrorStream(true)
                     .start();
             String output;
@@ -130,9 +130,9 @@ public final class IosSimulatorLocator {
             }
             boolean finished = process.waitFor(30, TimeUnit.SECONDS);
             return finished && process.exitValue() == 0 ? Optional.of(output) : Optional.empty();
-        } catch (IOException e) {
+        } catch (IOException _) {
             return Optional.empty();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return Optional.empty();
         }

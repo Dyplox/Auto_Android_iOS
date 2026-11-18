@@ -87,7 +87,9 @@ class DeviceProfileFactoryTest {
         FrameworkConfig config = config(Platform.IOS, "unsupported.reason", "only real iPhones are available",
                 "device.name", "iPhone", "app.id", "org.app", "platform.version", "26.0");
 
-        assertThatThrownBy(() -> factory(Optional.empty()).create(config))
+        DeviceProfileFactory factory = factory(Optional.empty());
+
+        assertThatThrownBy(() -> factory.create(config))
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("only real iPhones are available");
     }

@@ -42,8 +42,9 @@ class PlatformProvidersTest {
 
     @Test
     void duplicatedProvidersAreRejected() {
-        assertThatThrownBy(
-                () -> new PlatformProviders(List.of(new AndroidPlatformProvider(), new AndroidPlatformProvider())))
+        List<PlatformProvider> duplicated = List.of(new AndroidPlatformProvider(), new AndroidPlatformProvider());
+
+        assertThatThrownBy(() -> new PlatformProviders(duplicated))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -85,7 +86,10 @@ class PlatformProvidersTest {
 
     @Test
     void providerRefusesProfilesOfAnotherPlatform() {
-        assertThatThrownBy(() -> new IosPlatformProvider().capabilities(android().build()))
+        IosPlatformProvider ios = new IosPlatformProvider();
+        DeviceProfile androidProfile = android().build();
+
+        assertThatThrownBy(() -> ios.capabilities(androidProfile))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

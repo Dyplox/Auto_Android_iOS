@@ -3,6 +3,13 @@ import net.ltgt.gradle.errorprone.errorprone
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.testretry.TestRetryTaskExtension
 
+// Plugins are locked too (buildscript-gradle.lockfile)
+buildscript {
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
+
 plugins {
     java
     jacoco
@@ -10,6 +17,12 @@ plugins {
     alias(libs.plugins.errorprone)
     alias(libs.plugins.test.retry)
     alias(libs.plugins.sonarqube)
+}
+
+// Lock every resolved dependency (gradle.lockfile) so builds are reproducible.
+// After changing a version: ./gradlew dependencies buildEnvironment --write-locks
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 group = "com.reto.qa"
@@ -180,6 +193,7 @@ tasks.test {
 }
 
 val cleanAllureResults = tasks.register<Delete>("cleanAllureResults") {
+    group = "verification"
     description = "Deletes the Allure results of the previous E2E run."
     delete(layout.buildDirectory.dir("allure-results"))
 }

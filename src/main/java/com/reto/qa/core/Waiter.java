@@ -81,7 +81,7 @@ public final class Waiter {
         try {
             untilVisible(element, customTimeout);
             return true;
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             return false;
         }
     }
@@ -101,7 +101,7 @@ public final class Waiter {
                         WebElement element = d.findElement(locator);
                         return element.isDisplayed() ? element : null;
                     }));
-        } catch (TimeoutException e) {
+        } catch (TimeoutException _) {
             return Optional.empty();
         }
     }
@@ -140,7 +140,7 @@ public final class Waiter {
     public static boolean isDisplayedNow(WebElement element) {
         try {
             return element.isDisplayed();
-        } catch (NoSuchElementException | StaleElementReferenceException e) {
+        } catch (NoSuchElementException | StaleElementReferenceException _) {
             return false;
         }
     }

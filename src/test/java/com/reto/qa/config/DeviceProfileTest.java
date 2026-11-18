@@ -3,6 +3,7 @@ package com.reto.qa.config;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,7 +28,8 @@ class DeviceProfileTest {
         assertThat(profile.extraCapabilities())
                 .containsEntry("appium:appWaitActivity", "com.wdiodemoapp.MainActivity")
                 .containsEntry("myvendor:flag", true);
-        assertThatThrownBy(() -> profile.extraCapabilities().put("x", 1))
+        Map<String, Object> extraCapabilities = profile.extraCapabilities();
+        assertThatThrownBy(() -> extraCapabilities.put("x", 1))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -67,21 +69,27 @@ class DeviceProfileTest {
 
     @Test
     void deviceNameIsMandatory() {
-        assertThatThrownBy(() -> DeviceProfile.builder(Platform.ANDROID).appId("com.app").build())
+        DeviceProfile.Builder builder = DeviceProfile.builder(Platform.ANDROID).appId("com.app");
+
+        assertThatThrownBy(builder::build)
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("device.name");
     }
 
     @Test
     void appIdIsMandatory() {
-        assertThatThrownBy(() -> DeviceProfile.builder(Platform.ANDROID).deviceName("Pixel").build())
+        DeviceProfile.Builder builder = DeviceProfile.builder(Platform.ANDROID).deviceName("Pixel");
+
+        assertThatThrownBy(builder::build)
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("app.id");
     }
 
     @Test
     void iosRequiresUdidOrPlatformVersion() {
-        assertThatThrownBy(() -> DeviceProfile.builder(Platform.IOS).deviceName("iPhone 17").appId("org.app").build())
+        DeviceProfile.Builder builder = DeviceProfile.builder(Platform.IOS).deviceName("iPhone 17").appId("org.app");
+
+        assertThatThrownBy(builder::build)
                 .isInstanceOf(ConfigurationException.class)
                 .hasMessageContaining("xcrun simctl");
 
