@@ -9,7 +9,7 @@ allure = "3.1.1"
 aspectj = "1.9.27"
 slf4j = "2.0.20"
 logback = "1.5.38"
-jspecify = "1.0.0"
+jspecify = "1.0.1"
 
 # --- Build quality tools ---------------------------------------------------------------
 errorprone = "2.52.0"
