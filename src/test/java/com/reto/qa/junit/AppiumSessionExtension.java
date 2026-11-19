@@ -1,12 +1,15 @@
 package com.reto.qa.junit;
 
 import com.reto.qa.app.WdioDemoApp;
+import com.reto.qa.config.DeviceProfile;
 import com.reto.qa.config.FrameworkConfig;
 import com.reto.qa.config.FrameworkSettings;
 import com.reto.qa.config.Platform;
 import com.reto.qa.driver.AppiumServer;
 import com.reto.qa.driver.MobileSession;
 import com.reto.qa.driver.MobileSessionFactory;
+import io.qameta.allure.Allure;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtensionConfigurationException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.openqa.selenium.Capabilities;
 
 import java.util.Optional;
 
@@ -28,6 +32,8 @@ import java.util.Optional;
  *     {@code ThreadLocal} or static state, so it is safe even when JUnit spreads work across threads.</li>
  *     <li><b>App restarted before each test</b>: every test starts from the same state and does not depend on another
  *     one (Independent and Repeatable in FIRST) without paying for a new session (Fast).</li>
+ *     <li><b>Device as an Allure parameter</b> ("Pixel 9 · 15"): when the suite runs on several devices and their
+ *     results are merged into one report, each device keeps its own result and history.</li>
  *     <li><b>Parameter injection</b> of {@link WdioDemoApp} and {@link MobileSession} (DIP): tests declare what they
  *     need instead of looking it up.</li>
  *     <li>The platform arrives as the {@code platform} configuration parameter and the environment as
@@ -69,10 +75,36 @@ public final class AppiumSessionExtension
         context.getStore(NAMESPACE).put(SESSION_KEY, session);
     }
 
-    /** Restarts the app so each test starts from the same state. */
+    /** Tags the test with the device it runs on and restarts the app so each test starts from the same state. */
     @Override
     public void beforeEach(ExtensionContext context) {
-        WdioDemoApp.on(session(context)).restart();
+        MobileSession session = session(context);
+        Allure.parameter("device", deviceLabel(session.profile(), session.driver().getCapabilities()));
+        WdioDemoApp.on(session).restart();
+    }
+
+    /**
+     * Describes the device as "name · OS version". The version reported by the session wins over the configured one,
+     * which can be empty (for example when an iOS simulator is auto-selected). The UDID is left out on purpose: it
+     * changes between machines and would break the test history in Allure.
+     *
+     * @param profile      the configured device
+     * @param capabilities the capabilities returned by the Appium session
+     * @return the device label
+     */
+    static String deviceLabel(DeviceProfile profile, Capabilities capabilities) {
+        String version = text(capabilities.getCapability("platformVersion"));
+        if (version == null) {
+            version = text(capabilities.getCapability("appium:platformVersion"));
+        }
+        if (version == null) {
+            version = profile.platformVersion().orElse(null);
+        }
+        return version == null ? profile.deviceName() : profile.deviceName() + " · " + version;
+    }
+
+    private static @Nullable String text(@Nullable Object value) {
+        return value == null || value.toString().isBlank() ? null : value.toString();
     }
 
     /** Closes the class's session. */
