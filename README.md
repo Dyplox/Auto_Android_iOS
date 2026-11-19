@@ -4,6 +4,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Dyplox_Auto_Android_iOS&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Dyplox_Auto_Android_iOS)
+[![Release](https://img.shields.io/github/v/release/Dyplox/Auto_Android_iOS)](https://github.com/Dyplox/Auto_Android_iOS/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A single test project for **the same app on Android and iOS**, built with **Gradle 9**, **JUnit 6** and **Java 27**.
 Page Objects, tests and test data are shared; **the only thing that changes per platform is the locators**,
@@ -114,7 +116,7 @@ Lifecycle of a test class:
                                               ├─ createDriver()   AndroidDriver | IOSDriver
                                               └─ createActions()  AndroidPlatformActions | IosPlatformActions
                  └─ MobileSession stored in the class's ExtensionContext.Store
-             ─► beforeEach: restarts the app ─► the test receives WdioDemoApp as a parameter
+             ─► beforeEach: device as Allure parameter, restarts the app ─► the test receives WdioDemoApp
              ─► Pages / Components (PageFactory + AppiumFieldDecorator picks @AndroidFindBy or @iOSXCUITFindBy)
              ─► afterAll: closes the session
 ```
@@ -369,6 +371,41 @@ To inspect locators, use [Appium Inspector](https://github.com/appium/appium-ins
     runs the suite in the cloud. Requires the repository secrets `SAUCE_USERNAME`, `SAUCE_ACCESS_KEY`,
     `BROWSERSTACK_USERNAME`, `BROWSERSTACK_ACCESS_KEY` (and the optional `SAUCE_REGION` variable).
 
+### Several devices at once
+
+The emulator and simulator jobs are a **matrix**: when starting the workflow, list the devices as JSON and each one
+runs in its own job, in parallel, with its own artifacts (`fail-fast` is off, so one failing device does not cancel
+the others).
+
+| Input                | Default         | Example                           |
+|----------------------|-----------------|-----------------------------------|
+| `android-api-levels` | `[34]`          | `[31, 34, 35]`                    |
+| `ios-devices`        | `["iPhone 17"]` | `["iPhone 17", "iPhone 17 Pro"]`  |
+
+```bash
+gh workflow run mobile-tests.yml -f target=android-emulator -f android-api-levels='[31, 34, 35]'
+```
+
+The **e2e-report** job then merges the Allure results of every device into the `allure-results-all-devices`
+artifact. Each test carries the device as an Allure parameter (`Pixel 9 · 15`), so the same test on two devices
+shows up as two results with separate history. Locally, `./gradlew e2e` already runs Android and iOS at the same time.
+
+## Releases
+
+The project follows [Semantic Versioning](https://semver.org/) and every change is described in
+[`CHANGELOG.md`](CHANGELOG.md). The version lives in `gradle.properties`. To publish a release:
+
+1. In a pull request, set `version=<x.y.z>` in `gradle.properties` and move the `[Unreleased]` notes of the
+   changelog to a `## [<x.y.z>] - <date>` section.
+2. After merging it, tag `main`:
+
+   ```bash
+   git fetch origin && git tag v<x.y.z> origin/main && git push origin v<x.y.z>
+   ```
+
+`.github/workflows/release.yml` checks that the tag matches the version and that the changelog has that section,
+builds the project again and publishes the GitHub Release with those notes and the Javadoc as a `.zip`.
+
 ## Javadoc
 
 Every public type and method in `src/main` is documented. Generate the HTML with `./gradlew javadoc`
@@ -386,3 +423,9 @@ Every public type and method in `src/main` is documented. Generate the HTML with
 - There is one session per test class, and a platform's tests run sequentially (a device runs one test at a time).
   For several devices of the same platform, set `device.udid` and one port per device
   (`capability.systemPort` / `capability.wdaLocalPort`).
+
+## License
+
+[MIT](LICENSE). The app under test, the [WebdriverIO Native Demo App](https://github.com/webdriverio/native-demo-app),
+is also MIT and is downloaded at run time, not stored in this repository. Security reports: see
+[`SECURITY.md`](SECURITY.md).

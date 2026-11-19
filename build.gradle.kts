@@ -26,7 +26,7 @@ dependencyLocking {
 }
 
 group = "com.reto.qa"
-version = "1.0.0-SNAPSHOT"
+// version: gradle.properties (released with a v<version> tag, see CHANGELOG.md)
 description = "One test suite for Android and iOS: the only thing that changes per platform is the locators."
 
 // ---------------------------------------------------------------------------------------------
