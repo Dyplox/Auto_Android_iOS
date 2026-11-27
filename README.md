@@ -413,7 +413,7 @@ Every public type and method in `src/main` is documented. Generate the HTML with
 
 ## Notes
 
-- **Appium 4** was adopted right after its release, for study purposes. Compared with Appium 3 it only removed old
+- **Appium 4** was adopted right after its release to validate the upgrade early. Compared with Appium 3 it only removed old
   JSONWP endpoints that this framework does not use (everything goes through W3C and `mobile:` commands). java-client
   11 officially supports Appium 3 onwards; if you hit an incompatibility, go back to Appium 3 by setting in
   `package.json` `appium` 3.9.1, `appium-uiautomator2-driver` 8.7.3 and `appium-xcuitest-driver` 12.22.8, then run
